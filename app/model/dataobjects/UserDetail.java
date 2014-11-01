@@ -1,8 +1,12 @@
 package model.dataobjects;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import play.Logger;
 
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class UserDetail {
@@ -18,6 +22,12 @@ public final class UserDetail {
     private String email;
 
     private String password;
+
+    private String localeId;
+
+    private String avatarID;
+
+    private String pkid;
 
     public String getFirstName() {
         return firstName;
@@ -67,12 +77,56 @@ public final class UserDetail {
         this.password = password;
     }
 
-    @Override
-    public String toString() {
+    public String getLocaleId() {
+        return localeId;
+    }
+
+    public void setLocaleId(String localeId) {
+        this.localeId = localeId;
+    }
+
+    public String getAvatarID() {
+        return avatarID;
+    }
+
+    public void setAvatarID(String avatarID) {
+        this.avatarID = avatarID;
+    }
+
+    public String getPkid() {
+        return pkid;
+    }
+
+    public void setPkid(String pkid) {
+        this.pkid = pkid;
+    }
+
+    public String toJSON() {
         ObjectMapper mapper = new ObjectMapper();
         try {
             StringWriter sw = new StringWriter();
             mapper.writeValue(sw, this);
+            return sw.toString();
+        } catch (Exception exception) {
+            return super.toString();
+        }
+    }
+
+    public String toKVJSON() {
+        List<KeyValue> keyValueList = new ArrayList<KeyValue>();
+        keyValueList.add(new KeyValue("first_name", firstName));
+        keyValueList.add(new KeyValue("last_name", lastName));
+        keyValueList.add(new KeyValue("phone", phoneNumber));
+        keyValueList.add(new KeyValue("mobile", mobileNumber));
+        keyValueList.add(new KeyValue("email", email));
+        keyValueList.add(new KeyValue("password", password));
+        keyValueList.add(new KeyValue("locale", localeId));
+        keyValueList.add(new KeyValue("avatarId", avatarID));
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            StringWriter sw = new StringWriter();
+            mapper.writeValue(sw, keyValueList);
             return sw.toString();
         } catch (Exception exception) {
             return super.toString();
@@ -89,8 +143,40 @@ public final class UserDetail {
         userDetail.setMobileNumber(keyValues.get("mobile"));
         userDetail.setEmail(keyValues.get("email"));
         userDetail.setPassword(keyValues.get("password"));
+        userDetail.setLocaleId(keyValues.get("locale"));
+        userDetail.setAvatarID(keyValues.get("avatarId"));
         //TODO validate password 2
         keyValues.get("password2");
         return userDetail;
+    }
+
+    public static final UserDetail mergeForUpdate(UserDetail newUserDetail, UserDetail oldUserDetail) throws Exception {
+        UserDetail mergedUserDetail = new UserDetail();
+        mergedUserDetail.setAvatarID(getDbFriendly(isEmpty(newUserDetail.getAvatarID()) ? oldUserDetail.getAvatarID() : newUserDetail.getAvatarID()));
+        mergedUserDetail.setEmail(getDbFriendly(isEmpty(newUserDetail.getEmail()) ? oldUserDetail.getEmail() : newUserDetail.getEmail()));
+        mergedUserDetail.setFirstName(getDbFriendly(isEmpty(newUserDetail.getFirstName()) ? oldUserDetail.getFirstName() : newUserDetail.getFirstName()));
+        mergedUserDetail.setLastName(getDbFriendly(isEmpty(newUserDetail.getLastName()) ? oldUserDetail.getLastName() : newUserDetail.getLastName()));
+        mergedUserDetail.setLocaleId(getDbFriendly(isEmpty(newUserDetail.getLocaleId()) ? oldUserDetail.getLocaleId() : newUserDetail.getLocaleId()));
+        mergedUserDetail.setMobileNumber(getDbFriendly(isEmpty(newUserDetail.getMobileNumber()) ? oldUserDetail.getMobileNumber() : newUserDetail.getMobileNumber()));
+        mergedUserDetail.setPassword(getDbFriendly(isEmpty(newUserDetail.getPassword()) ? oldUserDetail.getPassword() : newUserDetail.getPassword()));
+        mergedUserDetail.setPhoneNumber(getDbFriendly(isEmpty(newUserDetail.getPhoneNumber()) ? oldUserDetail.getPhoneNumber() : newUserDetail.getPhoneNumber()));
+        mergedUserDetail.setPkid(getDbFriendly(isEmpty(newUserDetail.getPkid()) ? oldUserDetail.getPkid() : newUserDetail.getPkid()));
+        return mergedUserDetail;
+    }
+
+    private static boolean isEmpty(String someString){
+        if(someString == null || someString.isEmpty()){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    private static String getDbFriendly(String someString){
+        if(someString == null){
+            return "";
+        }else{
+            return someString;
+        }
     }
 }

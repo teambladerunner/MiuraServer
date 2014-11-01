@@ -2,22 +2,41 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-GET     /                           controllers.Application.index
-GET     /ws                         controllers.Application.ws
-GET     /sentiment/:symbol          controllers.StockSentiment.get(symbol)
+# CORS Handling
+OPTIONS /*all  controllers.CORSController.preFlight(all: String)
+
+# Home page
+# GET     /only-twitter                   @controllers.Users.onlyTwitter
+# GET     /link-result                    @controllers.Users.linkResult
+# GET     /current-user                   @controllers.Users.currentUser
+GET     /custom/login                   @controllers.CustomLoginController.login
+GET     /custom/logout                  @controllers.CustomLoginController.logout
+
+# MIURA Services
+GET     /                               @controllers.Application.index
+GET     /ws                             @controllers.Application.ws
+GET     /sse                            controllers.StockFeed.sse
+GET     /sentiment/:symbol              controllers.StockSentiment.get(symbol)
 
 # GET     /stocks get the stock summary of all stocks (list)
 # GET     /stocks?userId=xyz get the stock summary of all stocks (list) that this user can buy
 # GET     /stocks/:symbol get the current stock info (feed)
 # GET     /stocks/:symbol/history?days=30 get the last 30 days stock history
 
-GET     /user/:userId/profile       controllers.Users.getUserPersonalInfo(userId)
-GET     /user/:userId/portfolio     controllers.Users.getUserPortfolio(userId)
+#GET     /user/profile                   @controllers.Users.getUserPersonalInfo(userId)
+#GET     /user/:userId/portfolio         @controllers.Users.getUserPortfolio(userId)
+#GET     /user/:userId/portfolio/trades  @controllers.Users.getUserTradeHistory(userId)
+#PUT     /user                           @controllers.Users.newUser()
+
+GET     /user/profile                   controllers.Users.getUserPersonalInfo()
+GET     /user/:userId/portfolio         controllers.Users.getUserPortfolio(userId)
 GET     /user/:userId/portfolio/trades  controllers.Users.getUserTradeHistory(userId)
-PUT     /user  controllers.Users.newUser()
-OPTIONS /*all  controllers.CORSController.preFlight(all: String)
+POST    /user                           controllers.Users.newUser()
+PUT     /user                           controllers.Users.updateSettings()
+
 # PUT     /user/:userId/portfolio/trades/:symbol?price=30&type=
 # GET     /user/:userId/portfolio/analysis some analysis of what the users style is
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET     /assets/*file                   controllers.Assets.at(path="/public", file)
+->      /auth                           securesocial.Routes

@@ -3,17 +3,19 @@ package controllers
 import akka.actor.{ActorRef, _}
 import com.fasterxml.jackson.databind.JsonNode
 import model.stocks.{StocksActor, UnwatchStock, WatchStock}
-import model.user.UserActor
+import model.user.{DemoUser, UserActor}
 import play.libs.{Akka, F}
 import play.mvc.Results.ok
 import play.mvc.{Result, WebSocket}
+import securesocial.core.{RuntimeEnvironment, _}
 
 /**
  * The main web controller that handles returning the index page, setting up a WebSocket, and watching a stock.
  */
-object Application {
-  def index(): Result = {
-    return ok(views.html.index.render)
+class Application(override implicit val env: RuntimeEnvironment[DemoUser]) extends securesocial.core.SecureSocial[DemoUser] {
+
+  def index = SecuredAction { implicit request =>
+    Ok(views.html.index(request.user.main))
   }
 
   def ws(): WebSocket[JsonNode] = {

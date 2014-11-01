@@ -2,7 +2,9 @@ package model.dataobjects;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import play.Logger;
 
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +14,15 @@ public class KeyValue {
     private String name;
 
     private String value;
+
+    public KeyValue(){
+
+    }
+
+    public KeyValue(String name, String value){
+        this.name = name;
+        this.value = value;
+    }
 
     public String getName() {
         return name;
@@ -34,6 +45,12 @@ public class KeyValue {
         TypeFactory typeFactory = objectMapper.getTypeFactory();
         List<KeyValue> keyValueList =
                 objectMapper.readValue(json, typeFactory.constructCollectionType(List.class, KeyValue.class));
+
+//        for(KeyValue keyValue : keyValueList){
+//            keyValue.setName(keyValue.getName().substring(keyValue.getName().indexOf('_')));
+//            keyValue.setValue(keyValue.getValue().substring(keyValue.getValue().indexOf('_')));
+//        }
+
         return keyValueList;
     }
 
@@ -41,8 +58,10 @@ public class KeyValue {
         List<KeyValue> keyValueList = buildKeyValueList(json);
         Map<String, String> keyValueMap = new HashMap<String, String>();
         for (KeyValue keyValue : keyValueList) {
+            Logger.info(keyValue.getName() + " " + keyValue.getValue());
             keyValueMap.put(keyValue.getName(), keyValue.getValue());
         }
         return keyValueMap;
     }
+
 }

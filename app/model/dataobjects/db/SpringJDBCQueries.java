@@ -2,6 +2,7 @@ package model.dataobjects.db;
 
 import model.dataobjects.EnvProps;
 import model.dataobjects.Trade;
+import model.dataobjects.UserDetail;
 import model.dataobjects.UserStock;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -64,6 +65,29 @@ public class SpringJDBCQueries {
         public EnvProps mapRow(ResultSet rs, int rowNum) throws SQLException {
             EnvProps envProps = new EnvProps(rs.getString("PROPKEY"), rs.getString("PROPVALUE"));
             return envProps;
+        }
+    }
+
+    public UserDetail selectUserByEmail(String userEmail) {
+        List<UserDetail> userDetails = this.jdbcTemplate.query(
+                "select USERIDPK, USERPASSWORD, FIRSTNAME ,LASTNAME, EMAIL, TWITTERHANDLE, FACEBOOKHANDLE, " +
+                        "GOOGLEHANDLE, LINKEDINHANDLE, LOCALEID, AVATARID " +
+                        "from MIURA.GAMEUSER where EMAIL = ?",
+                new Object[]{userEmail},
+                new UserDetailMapper());
+        return userDetails.size() == 1 ? userDetails.get(0) : null;
+    }
+
+    private static final class UserDetailMapper implements RowMapper<UserDetail> {
+        public UserDetail mapRow(ResultSet rs, int rowNum) throws SQLException {
+            UserDetail userDetail = new UserDetail();
+            userDetail.setPkid(rs.getString("USERIDPK"));
+            userDetail.setAvatarID(rs.getString("AVATARID"));
+            userDetail.setEmail(rs.getString("EMAIL"));
+            userDetail.setFirstName(rs.getString("FIRSTNAME"));
+            userDetail.setLastName(rs.getString("LASTNAME"));
+            userDetail.setLocaleId(rs.getString("LOCALEID"));
+            return userDetail;
         }
     }
 

@@ -12,6 +12,10 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.1"
 
+//resolvers += Resolver.mavenLocal
+
+//resolvers += Resolver.sonatypeRepo("snapshots")
+
 libraryDependencies ++= Seq(
   filters,
   anorm,
@@ -25,6 +29,7 @@ libraryDependencies ++= Seq(
   "org.springframework" % "spring-jdbc" % "4.1.1.RELEASE",
   "org.springframework" % "spring-context" % "4.1.1.RELEASE",
   "commons-dbcp" % "commons-dbcp" % "1.4",
-  "com.github.nscala-time" %% "nscala-time" % "1.4.0"
+  "com.github.nscala-time" %% "nscala-time" % "1.4.0",
+  "ws.securesocial" % "securesocial_2.11" % "3.0-M1"
 )
 

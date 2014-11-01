@@ -3,6 +3,7 @@ package model.user
 import anorm._
 import model.dataobjects.db.{DB, DBFacade}
 import model.dataobjects.{Trade, UserDetail, UserStock}
+import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 
 import scala.collection.JavaConversions._
@@ -47,8 +48,8 @@ class UserDBModel extends DBFacade {
 
   def createUser(userDetail: UserDetail): Unit = {
     DB.withConnection { implicit c =>
-      SQL("insert into MIURA.GAMEUSER(USERIDPK, PASSWORD, FIRSTNAME ,LASTNAME, EMAIL, TWITTERHANDLE, FACEBOOKHANDLE, GOOGLEHANDLE, LINKEDINHANDLE) " +
-        "values ({userIdPk}, {password}, {firstName}, {lastName}, {email}, {twitterHandle}, {facebookHandle}, {googleHandle}, {linkedinHandle})").on(
+      SQL("insert into MIURA.GAMEUSER(USERIDPK, USERPASSWORD, FIRSTNAME ,LASTNAME, EMAIL, TWITTERHANDLE, FACEBOOKHANDLE, GOOGLEHANDLE, LINKEDINHANDLE, LOCALEID, AVATARID) " +
+        "values ({userIdPk}, {password}, {firstName}, {lastName}, {email}, {twitterHandle}, {facebookHandle}, {googleHandle}, {linkedinHandle}, {localeId}, {avatarId})").on(
           "userIdPk" -> Platform.currentTime.toString,
           "password" -> userDetail.getPassword,
           "firstName" -> userDetail.getFirstName,
@@ -57,8 +58,39 @@ class UserDBModel extends DBFacade {
           "twitterHandle" -> "",
           "facebookHandle" -> "",
           "googleHandle" -> "",
-          "linkedinHandle" -> ""
+          "linkedinHandle" -> "",
+          "localeId" -> "",
+          "avatarId" -> ""
         ).executeUpdate()
+    }
+  }
+
+  def updateUser(userDetail: UserDetail): Unit = {
+    Logger.info(userDetail.getPassword + " " + userDetail.getPkid)
+    try {
+      DB.withConnection { implicit c =>
+        SQL("update MIURA.GAMEUSER set USERIDPK = {userIdPk}, USERPASSWORD = {password}, FIRSTNAME = {firstName}," +
+          "LASTNAME = {lastName}, EMAIL = {email}, TWITTERHANDLE = {twitterHandle}, FACEBOOKHANDLE = {facebookHandle}, " +
+          "GOOGLEHANDLE = {googleHandle}, LINKEDINHANDLE = {linkedinHandle}, LOCALEID = {localeId}, AVATARID = {avatarId} " +
+          " where USERIDPK = {userIdPk}").on(
+            "userIdPk" -> userDetail.getPkid,
+            "password" -> userDetail.getPassword,
+            "firstName" -> userDetail.getFirstName,
+            "lastName" -> userDetail.getLastName,
+            "email" -> userDetail.getEmail,
+            "twitterHandle" -> "",
+            "facebookHandle" -> "",
+            "googleHandle" -> "",
+            "linkedinHandle" -> "",
+            "localeId" -> userDetail.getLocaleId,
+            "avatarId" -> userDetail.getAvatarID
+          ).executeUpdate()
+      }
+    } catch {
+      case exception: Exception => {
+        Logger.info(exception.getLocalizedMessage)
+        throw exception
+      }
     }
   }
 

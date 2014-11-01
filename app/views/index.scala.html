@@ -1,32 +1,63 @@
-<!DOCTYPE html>
+@(user: securesocial.core.BasicProfile)(implicit request: RequestHeader, env: securesocial.core.RuntimeEnvironment[model.user.DemoUser])
+@import securesocial.core.IdentityProvider
 
-@import play.mvc.Http.Context.Implicit._
+@import securesocial.core.IdentityProvider
+@import securesocial.core.providers.UsernamePasswordProvider
+@import securesocial.core.AuthenticationMethod._
+@import play.api.{Logger, Play}
+@import helper._
+@import play.api.Play
 
-<html>
-<head>
-    <title>Reactive Stock News Dashboard</title>
-    <link rel='stylesheet' href='@routes.Assets.at("lib/bootstrap/css/bootstrap.min.css")'>
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
-    <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
-    <script type='text/javascript' src='@routes.Assets.at("lib/jquery/jquery.min.js")'></script>
-    <script type='text/javascript' src='@routes.Assets.at("lib/flot/jquery.flot.js")'></script>
-    <script type='text/javascript' src='@routes.Assets.at("javascripts/index.js")'></script>
-</head>
-<body data-ws-url="@routes.Application.ws.webSocketURL(request)">
-<div class="navbar navbar-inverse navbar-fixed-top">
-    <div class="navbar-inner">
-        <div class="container">
-            <a class="brand" href="#">Reactive Stocks</a>
-            <form id="addsymbolform" class="navbar-form pull-right">
-                <input id="addsymboltext" type="text" class="span2" placeholder="SYMBOL">
-                <button type="submit" class="btn">Add Stock</button>
-            </form>
-        </div>
-    </div>
+@main("SecureSocial - Sample Protected Page") {
+<div class="page-header">
+    <h2><img src="@user.avatarUrl.getOrElse("")" alt="@user.firstName.getOrElse("")" width="40px" height="40px"/> Welcome @user.firstName.getOrElse("")</h2>
 </div>
 
-<div id="stocks" class="container">
+<div class="clearfix">
+    <h2>User Details</h2>
 
+    <ul>
+        <li>User Id: @user.userId</li>
+        <li>Fist name: @user.firstName.getOrElse("")</li>
+        <li>Last name: @user.lastName.</li>
+        <li>Full name: @user.fullName.getOrElse("")</li>
+        <li>Logged in from: @user.providerId</li>
+        <li>Email: @user.email.map { email => @email }.getOrElse("Not Available")</li>
+        <li>Authentication method: @user.authMethod</li>
+    </ul>
+
+    @user.oAuth1Info.map { info =>
+        <h2>OAuth1 Info</h2>
+
+        <ul>
+            <li>Token: @info.token</li>
+            <li>Secret: @info.secret</li>
+        </ul>
+    }
+
+    @user.oAuth2Info.map { info =>
+        <h2>OAuth2 Info</h2>
+
+        <ul>
+            <li>Access Token: @info.accessToken</li>
+            @info.tokenType.map { t => <li>Token Type: @t</li> }
+            @info.expiresIn.map { exp => <li>Expires in: @exp seconds</li>}
+            @info.refreshToken.map { rt => <li>Refresh Token: @rt</li>}
+        </ul>
+    }
+    <hr>
+    @user.passwordInfo.map { info =>
+        <a class="btn" href="@securesocial.controllers.routes.PasswordChange.page.absoluteURL(IdentityProvider.sslEnabled)">Change Password</a>
+    }
+
+    <span>Link this account to
+
+
+    </span>
+    <hr>
+    <a class="btn" href="@securesocial.controllers.routes.LoginPage.logout()">Logout</a>
 </div>
-</body>
-</html>
+
+<div id="stocks" class="container"></div>
+    
+}

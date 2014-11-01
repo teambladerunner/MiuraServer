@@ -1,8 +1,12 @@
 package model.stocks
 
+import java.math
 import java.util.Random
 
 import akka.actor.{Actor, ActorRef, Props}
+import play.api.Logger
+import play.api.libs.iteratee.{Concurrent, Enumerator}
+import play.api.libs.json.{JsValue, _}
 import play.libs.Akka
 
 import scala.collection.JavaConverters._
@@ -30,14 +34,9 @@ class StockActor(symbol: String) extends Actor {
   }
 
   // Fetch the latest stock value every 5 minutes
-  val stockTick = context.system.scheduler.schedule(Duration.Zero, 5.minutes, self, FetchLatest)
+  val stockTick = context.system.scheduler.schedule(Duration.Zero, 500.milliseconds, self, FetchLatest)
 
   def receive = {
-    case UpdateStockList => {
-      // TODO get distinct from db
-      // add to list
-      //stockList = stockList :+ (String, String, Double)
-    }
     case FetchLatest =>
       // add a new stock price to the history and drop the oldest
       val newPrice = stockQuote.newPrice(stockHistory.last.doubleValue())
@@ -88,5 +87,3 @@ case class StockHistory(symbol: String, history: java.util.List[java.lang.Double
 case class WatchStock(symbol: String)
 
 case class UnwatchStock(symbol: Option[String])
-
-case object UpdateStockList

@@ -7,11 +7,11 @@ trait DBTrait {
   Class.forName("com.ibm.db2.jcc.DB2Driver").newInstance
 
   def getConnectionByUrl(url: String) = {
-    DriverManager.getConnection(url, "db2admin", "db2@dm1n")
+    DriverManager.getConnection(url, play.Play.application.configuration.getString("db.default.user"), play.Play.application.configuration.getString("db.default.password"))
   }
 
   def getConnection(name: String) = {
-    getConnectionByUrl("jdbc:db2://localhost:50000/ooofoooh")
+    getConnectionByUrl(play.Play.application.configuration.getString("db.default.url"))
   }
 
   /*
