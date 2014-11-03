@@ -16,8 +16,8 @@ GET     /custom/logout                  @controllers.CustomLoginController.logou
 GET     /                               @controllers.Application.index
 GET     /ws                             @controllers.Application.ws
 GET     /sse                            controllers.StockFeed.sse
-GET     /sseStockFeed/:symbol           controllers.StockFeed.sseStockFeed.get(symbol)
-GET     /stocks                         controllers.StockFeed.getAllStocks.get
+GET     /sseSymbolFeed/:symbol          controllers.StockFeed.sseSymbolFeed(symbol)
+GET     /stocks                         controllers.StockFeed.getAllStocks
 GET     /sentiment/:symbol              controllers.StockSentiment.get(symbol)
 
 # GET     /stocks get the stock summary of all stocks (list)

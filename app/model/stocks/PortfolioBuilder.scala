@@ -1,20 +1,24 @@
 package model.stocks
 
 import model.dataobjects.{JSONify, Trade, UserStock}
-
-import scala.collection.parallel
+import play.api.Logger
+import scala.collection._
 
 class PortfolioBuilder {
 
   def buildPortfolio(userStocks: Seq[UserStock], trades: Seq[Trade]): List[UserStockSummary] = {
-    val tradesParList = trades.par.map(trade => (trade.getSymbol, trade))
+
+    //val tradesParList = trades.par.map(trade => (trade.getSymbol, trade))
+    val tradesParList = trades.map(trade => (trade.getSymbol, trade))
     val tradesMap = tradesParList.groupBy(_._1).mapValues(_.map(_._2))
     var portfolio: List[UserStockSummary] = List()
 
-    userStocks.par.foreach(userStock => {
+    //userStocks.par.foreach(userStock => {
+    userStocks.foreach(userStock => {
       val symbol = userStock.getSymbol
       val currentMarketPrice = 0.0F // TODO fetch current market price from service for symbol
-      val tradeList: Option[parallel.ParSeq[Trade]] = tradesMap.get(symbol)
+      //val tradeList: Option[parallel.ParSeq[Trade]] = tradesMap.get(symbol)
+      val tradeList: Option[Seq[Trade]] = tradesMap.get(symbol)
 
       var totalBuys = 0
       var totalSells = 0
@@ -44,6 +48,11 @@ class PortfolioBuilder {
         currentMarketPrice, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F)
       portfolio = portfolio :+ userStockSummary
     })
+
+    for (userStock <- portfolio) {
+      Logger.info("logging userStock " + userStock.symbol + " " + userStock.totalUnits)
+    }
+
     return portfolio
   }
 

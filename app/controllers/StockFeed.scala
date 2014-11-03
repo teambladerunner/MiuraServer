@@ -15,6 +15,8 @@ import scala.concurrent.Future
 
 object StockFeed extends Controller {
 
+  import scala.concurrent.ExecutionContext.Implicits.global
+
 //  def sse() = Action {
 //    implicit req => {
 //      val out = Concurrent.unicast[JsValue](
@@ -51,7 +53,7 @@ object StockFeed extends Controller {
     }
   }
 
-  def sseStockFeed(symbol: String) = Action {
+  def sseSymbolFeed(symbol: String) = Action {
     implicit req => {
       val (out, wsOutChannel) = Concurrent.broadcast[JsValue]
       val userActor: ActorRef = Akka.system.actorOf(Props(new StockFeedPublishActorSSE(symbol, (out, wsOutChannel))))

@@ -1,8 +1,8 @@
 package model.user
 
-import model.dataobjects.json.JSONifier
 import model.dataobjects.{Trade, UserStock}
 import model.stocks.{PortfolioBuilder, UserStockSummary}
+import play.api.libs.json._
 
 class UserPortfolio(user: String) {
 
@@ -12,6 +12,20 @@ class UserPortfolio(user: String) {
 
   val portfolio: List[UserStockSummary] = new PortfolioBuilder().buildPortfolio(userStocks, userTradeHistory)
 
-  def asJSON = JSONifier.toJSON(portfolio)
+  implicit val UserStockSummary = new Writes[UserStockSummary] {
+    def writes(userStockSummary: UserStockSummary) = Json.obj(
+      "averageInvestedPrice" -> userStockSummary.averageInvestedPrice,
+      "currentMarketPrice" -> userStockSummary.currentMarketPrice,
+      "currMarketValue" -> userStockSummary.currMarketValue,
+      "realizedProfitAmount" -> userStockSummary.realizedProfitAmount,
+      "realizedProfitPercentage" -> userStockSummary.realizedProfitPercentage,
+      "symbol" -> userStockSummary.symbol,
+      "totalPurchasePrice" -> userStockSummary.totalPurchasePrice,
+      "totalUnits" -> userStockSummary.totalUnits,
+      "unrealizedProfitAmount" -> userStockSummary.unrealizedProfitAmount,
+      "unrealizedProfitPercentage" -> userStockSummary.unrealizedProfitPercentage)
+  }
+
+  def asJSON = Json.stringify(Json.toJson(portfolio))
 
 }

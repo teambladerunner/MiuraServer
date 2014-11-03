@@ -30,6 +30,7 @@ object Users extends play.api.mvc.Controller {
   def getUserPortfolio = Action.async { request =>
     Future {
       val userId = getUser(request)
+      Logger.info(new UserPortfolio(userId).asJSON)
       Ok(new UserPortfolio(userId).asJSON)
     }
   }
