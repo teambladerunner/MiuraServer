@@ -12,7 +12,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext
 import play.api.mvc.{Cookie, Request, WithFilters}
 import play.api.{Logger, _}
 import securesocial.core.RuntimeEnvironment
-import securesocial.core.providers.UsernamePasswordProvider
+import securesocial.core.providers.{GoogleProvider, UsernamePasswordProvider}
 
 import scala.collection.immutable.ListMap
 import scala.compat.Platform
@@ -37,7 +37,7 @@ object Global extends WithFilters(AccessLog, CORSFilter) with GlobalSettings {
   var scheduledItems: List[Cancellable] = List()
 
   override def onStart(app: play.api.Application): Unit = {
-    System.setProperty("java.net.preferIPv4Stack","true")
+    System.setProperty("java.net.preferIPv4Stack", "true")
     Logger.info("IP v4 settings = " + System.getProperty("java.net.preferIPv4Stack"))
     super.onStart(app)
     //
@@ -82,9 +82,9 @@ object Global extends WithFilters(AccessLog, CORSFilter) with GlobalSettings {
       //      include(
       //        new FacebookProvider(routes, cacheService, oauth2ClientFor(FacebookProvider.Facebook))
       //      ),
-      //      include(
-      //        new GoogleProvider(routes, cacheService, oauth2ClientFor(GoogleProvider.Google))
-      //      ),
+      include(
+        new GoogleProvider(routes, cacheService, oauth2ClientFor(GoogleProvider.Google))
+      ),
       //      include(
       //        new LinkedInProvider(routes, cacheService, oauth1ClientFor(LinkedInProvider.LinkedIn))
       //      ) //,
