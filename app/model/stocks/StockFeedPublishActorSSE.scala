@@ -1,8 +1,15 @@
 package model.stocks
 
+import java.math
+
 import akka.actor.UntypedActor
+//import model.stocks.{StockHistory, StockUpdate, StocksActor, WatchStock}
+//import play.api.Logger
 import play.api.libs.iteratee.{Concurrent, Enumerator}
 import play.api.libs.json._
+import collection.JavaConversions._
+
+import scala.math.BigDecimal
 
 /**
  * The broker between the WebSocket and the StockActor(s).  The UserActor holds the connection and sends serialized
