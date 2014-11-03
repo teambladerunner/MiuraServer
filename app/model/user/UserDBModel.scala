@@ -20,7 +20,7 @@ class UserDBModel extends DBFacade {
     for (userStock: UserStock <- new UserDBModel().getUserStocks(userId)) {
       jsObjects = jsObjects :+ Json.obj(
         "stockSymbol" -> userStock.getSymbol,
-        "units" -> userStock.getUnits.toString
+        "units" -> "0 units"
       )
     }
     return Json.obj(

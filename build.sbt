@@ -30,6 +30,8 @@ libraryDependencies ++= Seq(
   "org.springframework" % "spring-context" % "4.1.1.RELEASE",
   "commons-dbcp" % "commons-dbcp" % "1.4",
   "com.github.nscala-time" %% "nscala-time" % "1.4.0",
-  "ws.securesocial" % "securesocial_2.11" % "3.0-M1"
+  "ws.securesocial" % "securesocial_2.11" % "3.0-M1",
+  "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
+  "net.databinder.dispatch" % "dispatch-json4s-native_2.11" % "0.11.2"
 )
 

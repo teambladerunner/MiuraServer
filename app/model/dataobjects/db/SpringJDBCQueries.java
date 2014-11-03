@@ -23,11 +23,29 @@ public class SpringJDBCQueries {
 
     public List<UserStock> getUserStocks(String userId) {
         List<UserStock> userStocks = this.jdbcTemplate.query(
-                "select USERID, SYMBOL, SUM(UNITS) as VALUE " +
+                "select SYMBOL, SUM(UNITS) as VALUE " +
                         "from MIURA.USERPORTFOLIO US1 " +
                         "group by USERID, SYMBOL " +
                         "having USERID = ? AND SUM(UNITS) > 0",
                 new Object[]{userId},
+                new UserStockMapper());
+        return userStocks;
+    }
+
+    public List<UserStock> getAllStocks() {
+        List<UserStock> userStocks = this.jdbcTemplate.query(
+                "select distinct(SYMBOL) from MIURA.NASDAQUPDATE",
+                new Object[]{},
+                new UserStockMapper());
+        return userStocks;
+    }
+
+    public List<UserStock> getStockOpen(String symbol) {
+        List<UserStock> userStocks = this.jdbcTemplate.query(
+                "select SYMBOL, LASTSALE as VALUE " +
+                        "from MIURA.NASDAQUPDATE " +
+                        "where SYMBOL = ?",
+                new Object[]{symbol},
                 new UserStockMapper());
         return userStocks;
     }
@@ -39,9 +57,23 @@ public class SpringJDBCQueries {
         }
     }
 
+    public List<Trade> getUserTradeHistory(String userId, String symbol, boolean desc) {
+        List<Trade> trades = this.jdbcTemplate.query(
+                "select TIMEPK, QUOTEID, SYMBOL, UNITS, PRICE, BUYSELL " +
+                        "from MIURA.USERPORTFOLIO " +
+                        "where USERID = ? AND SYMBOL = ? " +
+                        "order by TIMEPK " + (desc ? "desc" : "asc"),
+                new Object[]{userId},
+                new TradeMapper());
+        return trades;
+    }
+
     public List<Trade> getUserTradeHistory(String userId) {
         List<Trade> trades = this.jdbcTemplate.query(
-                "select TIMEPK, SYMBOL, UNITS, PRICE, BUYSELL from MIURA.USERPORTFOLIO where USERID = ? order by TIMEPK desc",
+                "select TIMEPK, QUOTEID, SYMBOL, UNITS, PRICE, BUYSELL " +
+                        "from MIURA.USERPORTFOLIO " +
+                        "where USERID = ? " +
+                        "order by TIMEPK desc",
                 new Object[]{userId},
                 new TradeMapper());
         return trades;

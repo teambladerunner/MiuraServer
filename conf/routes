@@ -29,8 +29,8 @@ GET     /sentiment/:symbol              controllers.StockSentiment.get(symbol)
 #PUT     /user                           @controllers.Users.newUser()
 
 GET     /user/profile                   controllers.Users.getUserPersonalInfo()
-GET     /user/:userId/portfolio         controllers.Users.getUserPortfolio(userId)
-GET     /user/:userId/portfolio/trades  controllers.Users.getUserTradeHistory(userId)
+GET     /user/portfolio                 controllers.Users.getUserPortfolio()
+GET     /user/portfolio/trades  controllers.Users.getUserTradeHistory()
 POST    /user                           controllers.Users.newUser()
 PUT     /user                           controllers.Users.updateSettings()
 

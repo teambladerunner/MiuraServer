@@ -7,7 +7,7 @@ import model.dataobjects.UserDetail
 import model.user._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.{Action, Cookie}
+import play.api.mvc.{Action, AnyContent, Cookie, Request}
 import play.libs.Akka
 import play.mvc.Http.HeaderNames
 
@@ -21,27 +21,22 @@ object Users extends play.api.mvc.Controller {
 
   def getUserPersonalInfo = Action.async { request =>
     Future {
-      val cookie: Option[Cookie] = request.cookies.get("authid")
-      val headerValue : Option[String] = request.headers.get("authid")
-
-      headerValue match {
-        case None => BadRequest(jsonify("cookie"))
-        case _ => {
-          val userId = headerValue.get
-          Ok(new UserDBModel().springJDBCQueries.selectUserByEmail(userId).toKVJSON)
-        }
-      }
+      val userId = getUser(request)
+      val headerValue: Option[String] = request.headers.get("authid")
+      Ok(new UserDBModel().springJDBCQueries.selectUserByEmail(userId).toKVJSON)
     }
   }
 
-  def getUserPortfolio(userId: String) = Action.async {
+  def getUserPortfolio = Action.async { request =>
     Future {
-      Ok(new UserDBModel().getUserStocksAsJson(userId))
+      val userId = getUser(request)
+      Ok(new UserPortfolio(userId).asJSON)
     }
   }
 
-  def getUserTradeHistory(userId: String) = Action.async {
+  def getUserTradeHistory() = Action.async { request =>
     Future {
+      val userId = getUser(request)
       Ok(new UserDBModel().getUserTradeHistoryAsJson(userId))
     }
   }
@@ -73,7 +68,7 @@ object Users extends play.api.mvc.Controller {
       Logger.info("got update rq " + request.cookies.get("authid"))
       Logger.info("got update rq " + request.headers.get("authid"))
       //val cookie: Option[Cookie] = request.cookies.get("authid")
-      val headerValue : Option[String] = request.headers.get("authid")
+      val headerValue: Option[String] = request.headers.get("authid")
       headerValue match {
         case None => BadRequest(jsonify("bad cookie request"))
         case _ => {
@@ -106,6 +101,14 @@ object Users extends play.api.mvc.Controller {
     ))
   }
 
+  def getUser(request: Request[AnyContent]): String = {
+    val cookie: Option[Cookie] = request.cookies.get("authid")
+    val headerValue: Option[String] = request.headers.get("authid")
+    headerValue match {
+      case None => throw new Exception("The user has login information associated with the session")
+      case _ => headerValue.get
+    }
+  }
 
   // a sample action using an authorization implementation
   //  def onlyTwitter = SecuredAction(WithProvider("twitter")) { implicit request =>

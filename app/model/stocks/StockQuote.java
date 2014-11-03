@@ -1,5 +1,5 @@
 package model.stocks;
 
 public interface StockQuote {
-    public Double newPrice(Double lastPrice);
+    public Double newPrice(String symbol, Double lastPrice);
 }

@@ -4,18 +4,20 @@ public class UserStock {
 
     private final String symbol;
 
-    private final Float units;
+    private final Float price;
 
-    public UserStock(String symbol, Float units) {
+    public UserStock(String symbol, Float price) {
         this.symbol = symbol;
-        this.units = units;
+        this.price = price;
     }
 
     public String getSymbol() {
         return symbol;
     }
 
-    public Float getUnits() {
-        return units;
+    public Float getPrice() {
+        return price;
     }
+
 }
+

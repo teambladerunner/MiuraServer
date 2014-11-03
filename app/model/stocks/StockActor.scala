@@ -1,12 +1,9 @@
 package model.stocks
 
-import java.math
-import java.util.Random
+import java.lang
 
 import akka.actor.{Actor, ActorRef, Props}
 import play.api.Logger
-import play.api.libs.iteratee.{Concurrent, Enumerator}
-import play.api.libs.json.{JsValue, _}
 import play.libs.Akka
 
 import scala.collection.JavaConverters._
@@ -21,28 +18,31 @@ import scala.concurrent.duration._
 
 class StockActor(symbol: String) extends Actor {
 
-  lazy val stockQuote: StockQuote = new FakeStockQuote
-
-  var stockList: List[(String, String, Double)] = List()
+  lazy val stockQuote: StockQuote = new GoogleAPIStockQuote
 
   protected[this] var watchers: HashSet[ActorRef] = HashSet.empty[ActorRef]
 
-  // A random data set which uses stockQuote.newPrice to get each data point
-  var stockHistory: Queue[java.lang.Double] = {
-    lazy val initialPrices: Stream[java.lang.Double] = (new Random().nextDouble * 800) #:: initialPrices.map(previous => stockQuote.newPrice(previous))
-    initialPrices.take(50).to[Queue]
-  }
+  var stockHistory: Queue[java.lang.Double] = Queue()
 
-  // Fetch the latest stock value every 5 minutes
-  val stockTick = context.system.scheduler.schedule(Duration.Zero, 500.milliseconds, self, FetchLatest)
+  // Fetch the latest stock value every 2 seconds
+  val stockTick = context.system.scheduler.schedule(Duration.Zero, 2.seconds, self, FetchLatest)
 
   def receive = {
     case FetchLatest =>
       // add a new stock price to the history and drop the oldest
-      val newPrice = stockQuote.newPrice(stockHistory.last.doubleValue())
-      stockHistory = stockHistory.drop(1) :+ newPrice
-      // notify watchers
-      watchers.foreach(_ ! StockUpdate(symbol, newPrice))
+      if(stockHistory.size == 0){
+        val newPrice = stockQuote.newPrice(symbol, 0.0)//TODO may get opening price
+        Logger.info("got new price " + symbol + " -> " + newPrice)
+        stockHistory = stockHistory :+ newPrice
+        // notify watchers
+        watchers.foreach(_ ! StockUpdate(symbol, newPrice))
+      }else {
+        val newPrice = stockQuote.newPrice(symbol, stockHistory.last.doubleValue())
+        Logger.info("got new price " + symbol + " -> " +newPrice)
+        stockHistory = stockHistory.drop(1) :+ newPrice
+        // notify watchers
+        watchers.foreach(_ ! StockUpdate(symbol, newPrice))
+      }
     case WatchStock(_) =>
       // send the stock history to the user
       sender ! StockHistory(symbol, stockHistory.asJava)
