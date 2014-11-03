@@ -18,6 +18,7 @@ GET     /ws                             @controllers.Application.ws
 GET     /sse                            controllers.StockFeed.sse
 GET     /sseSymbolFeed/:symbol          controllers.StockFeed.sseSymbolFeed(symbol)
 GET     /stocks                         controllers.StockFeed.getAllStocks
+GET     /stocks/search/:symbol          controllers.StockSearch.search(symbol)
 GET     /sentiment/:symbol              controllers.StockSentiment.get(symbol)
 
 # GET     /stocks get the stock summary of all stocks (list)
@@ -35,6 +36,7 @@ GET     /user/portfolio                 controllers.Users.getUserPortfolio()
 GET     /user/portfolio/trades          controllers.Users.getUserTradeHistory()
 POST    /user                           controllers.Users.newUser()
 PUT     /user                           controllers.Users.updateSettings()
+POST    /user/portfolio/trades          controllers.Users.newTrade()
 
 # PUT     /user/:userId/portfolio/trades/:symbol?price=30&type=
 # GET     /user/:userId/portfolio/analysis some analysis of what the users style is

@@ -70,7 +70,7 @@ public class SpringJDBCQueries {
 
     public List<Trade> getUserTradeHistory(String userId) {
         List<Trade> trades = this.jdbcTemplate.query(
-                "select TIMEPK, QUOTEID, SYMBOL, UNITS, PRICE, BUYSELL " +
+                "select TIMEPK, QUOTEID, SYMBOL, UNITS, PRICE, BUYSELL, USERID " +
                         "from MIURA.USERPORTFOLIO " +
                         "where USERID = ? " +
                         "order by TIMEPK desc",
@@ -81,7 +81,7 @@ public class SpringJDBCQueries {
 
     private static final class TradeMapper implements RowMapper<Trade> {
         public Trade mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Trade trade = new Trade(new Timestamp(rs.getLong("TIMEPK")), rs.getString("SYMBOL"), rs.getFloat("UNITS"), rs.getFloat("PRICE"), rs.getString("BUYSELL"));
+            Trade trade = new Trade(new Timestamp(rs.getLong("TIMEPK")), rs.getString("USERID"), rs.getString("SYMBOL"), rs.getFloat("UNITS"), rs.getFloat("PRICE"), rs.getString("BUYSELL"));
             return trade;
         }
     }

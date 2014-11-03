@@ -65,6 +65,21 @@ class UserDBModel extends DBFacade {
     }
   }
 
+  def createTrade(trade: Trade): Unit = {
+    DB.withConnection { implicit c =>
+      SQL("INSERT INTO MIURA.USERPORTFOLIO(  TIMEPK,  QUOTEID,  SYMBOL,  UNITS,  PRICE,  BUYSELL,  USERID) " +
+        "VALUES(  {timepk},  {quoteid},  {symbol},  {units},  {rate},  {buysell},  {userid})").on(
+          "timepk" -> Platform.currentTime.toString,
+          "quoteid" -> Platform.currentTime.toString,
+          "symbol" -> trade.getSymbol,
+          "units" -> trade.getUnits,
+          "rate" -> trade.getRate,
+          "buysell" -> trade.getBuySell,
+          "userid" -> trade.getUser
+        ).executeUpdate()
+    }
+  }
+
   def updateUser(userDetail: UserDetail): Unit = {
     Logger.info(userDetail.getPassword + " " + userDetail.getPkid)
     try {

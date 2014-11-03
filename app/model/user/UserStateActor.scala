@@ -1,7 +1,7 @@
 package model.user
 
 import akka.actor.UntypedActor
-import model.dataobjects.UserDetail
+import model.dataobjects.{Trade, UserDetail}
 import play.api.Logger
 
 class UserStateActor extends UntypedActor {
@@ -32,6 +32,16 @@ class UserStateActor extends UntypedActor {
           case _ => userDbModel.updateUser(UserDetail.mergeForUpdate(updateUserRq.userDetail, oldUserDetail.get))
         }
       }
+      if (message.isInstanceOf[NewTradeRq]) {
+        Logger.info("got user trade message " + message)
+        val newTradeRq: NewTradeRq = message.asInstanceOf[NewTradeRq]
+        val userDbModel: UserDBModel = new UserDBModel()
+        val oldUserDetail: Option[UserDetail] = Option(userDbModel.springJDBCQueries.selectUserByEmail(newTradeRq.trade.getUser))
+        oldUserDetail match {
+          case None => sender() ! new Error("The email address does not exist")
+          case _ => userDbModel.createTrade(newTradeRq.trade)
+        }
+      }
       sender() ! new Success()
     } catch {
       case exception: Exception => {
@@ -43,6 +53,8 @@ class UserStateActor extends UntypedActor {
 }
 
 case class NewUserRq(userDetail: UserDetail)
+
+case class NewTradeRq(trade: Trade)
 
 case class UpdateUserRq(userDetail: UserDetail)
 

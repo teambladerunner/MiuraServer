@@ -32,6 +32,8 @@ libraryDependencies ++= Seq(
   "com.github.nscala-time" %% "nscala-time" % "1.4.0",
   "ws.securesocial" % "securesocial_2.11" % "3.0-M1",
   "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
-  "net.databinder.dispatch" % "dispatch-json4s-native_2.11" % "0.11.2"
+  "net.databinder.dispatch" % "dispatch-json4s-native_2.11" % "0.11.2",
+  "com.chuusai" %% "shapeless" % "2.0.0",
+  "com.typesafe.play.plugins" %% "play-plugins-mailer" % "2.3.1"
 )
 

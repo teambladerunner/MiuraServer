@@ -6,13 +6,13 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{ActorSystem, Cancellable, Props}
 import com.github.nscala_time.time.Imports._
 import controllers.filters.{AccessLog, CORSFilter}
-import model.stocks.{SymbolUploadActor, Upload}
+import model.stocks._
 import model.user.{DemoUser, InMemoryUserService, MyEventListener}
 import org.springframework.context.support.ClassPathXmlApplicationContext
-import play.api.mvc.WithFilters
+import play.api.mvc.{Cookie, Request, WithFilters}
 import play.api.{Logger, _}
 import securesocial.core.RuntimeEnvironment
-import securesocial.core.providers.{FacebookProvider, GoogleProvider, LinkedInProvider}
+import securesocial.core.providers.UsernamePasswordProvider
 
 import scala.collection.immutable.ListMap
 import scala.compat.Platform
@@ -22,6 +22,14 @@ import scala.concurrent.duration.Duration
 object Global extends WithFilters(AccessLog, CORSFilter) with GlobalSettings {
   //object Global extends GlobalSettings {
 
+  import scala.concurrent.ExecutionContext.Implicits.global
+
+  val stockQuote: StockQuote = new GoogleAPIStockQuote
+
+  val system = ActorSystem()
+
+  val nasdaqSymbolUploadActor = system.actorOf(Props(classOf[SymbolUploadActor]), "nasdaqSymbolUploadActor")
+
   val context = new ClassPathXmlApplicationContext("application-context.xml")
 
   val millisInADay = 86400000L
@@ -29,12 +37,12 @@ object Global extends WithFilters(AccessLog, CORSFilter) with GlobalSettings {
   var scheduledItems: List[Cancellable] = List()
 
   override def onStart(app: play.api.Application): Unit = {
+    System.setProperty("java.net.preferIPv4Stack","true")
+    Logger.info("IP v4 settings = " + System.getProperty("java.net.preferIPv4Stack"))
     super.onStart(app)
-    val system = ActorSystem()
-    import system.dispatcher
-
-    Logger.info("getting stock download actor...")
-    val nasdaqSymbolUploadActor = system.actorOf(Props(classOf[SymbolUploadActor]), "nasdaqSymbolUploadActor") //TODO can i abstract this?
+    //
+    //    Logger.info("getting stock download actor...")
+    //    val nasdaqSymbolUploadActor = system.actorOf(Props(classOf[SymbolUploadActor]), "nasdaqSymbolUploadActor") //TODO can i abstract this?
 
     //    val lastUpdateUploadTime = new StocksDBModel().getLastUpdateUploadTime()
     //    Logger.info("last updated " + lastUpdateUploadTime)
@@ -71,20 +79,29 @@ object Global extends WithFilters(AccessLog, CORSFilter) with GlobalSettings {
     override lazy val routes = new CustomRoutesService()
     override lazy val userService: InMemoryUserService = new InMemoryUserService()
     override lazy val providers = ListMap(
-      include(
-        new FacebookProvider(routes, cacheService, oauth2ClientFor(FacebookProvider.Facebook))
-      ),
-      include(
-        new GoogleProvider(routes, cacheService, oauth2ClientFor(GoogleProvider.Google))
-      ),
-      include(
-        new LinkedInProvider(routes, cacheService, oauth1ClientFor(LinkedInProvider.LinkedIn))
-      ) //,
       //      include(
-      //        new UsernamePasswordProvider[]()(routes,cacheService,oauth1ClientFor(LinkedInProvider.LinkedIn))
-      //      )
+      //        new FacebookProvider(routes, cacheService, oauth2ClientFor(FacebookProvider.Facebook))
+      //      ),
+      //      include(
+      //        new GoogleProvider(routes, cacheService, oauth2ClientFor(GoogleProvider.Google))
+      //      ),
+      //      include(
+      //        new LinkedInProvider(routes, cacheService, oauth1ClientFor(LinkedInProvider.LinkedIn))
+      //      ) //,
+      include(
+        new UsernamePasswordProvider[DemoUser](userService, avatarService, viewTemplates, passwordHashers)
+      )
     )
     override lazy val eventListeners = List(new MyEventListener())
+  }
+
+  def getUser(request: Request[AnyRef]): String = {
+    val cookie: Option[Cookie] = request.cookies.get("authid")
+    val headerValue: Option[String] = request.headers.get("authid")
+    headerValue match {
+      case None => throw new Exception("The user has login information associated with the session")
+      case _ => headerValue.get
+    }
   }
 
   /**

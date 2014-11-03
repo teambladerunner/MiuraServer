@@ -10,6 +10,7 @@ import play.api.libs.iteratee.Concurrent
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, Controller}
 import play.libs.Akka
+import Global._
 
 import scala.concurrent.Future
 

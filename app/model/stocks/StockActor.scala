@@ -1,7 +1,5 @@
 package model.stocks
 
-import java.lang
-
 import akka.actor.{Actor, ActorRef, Props}
 import play.api.Logger
 import play.libs.Akka
@@ -24,21 +22,21 @@ class StockActor(symbol: String) extends Actor {
 
   var stockHistory: Queue[java.lang.Double] = Queue()
 
-  // Fetch the latest stock value every 2 seconds
-  val stockTick = context.system.scheduler.schedule(Duration.Zero, 2.seconds, self, FetchLatest)
+  // Fetch the latest stock value every 2 minutes
+  val stockTick = context.system.scheduler.schedule(Duration.Zero, 2.minutes, self, FetchLatest)
 
   def receive = {
     case FetchLatest =>
       // add a new stock price to the history and drop the oldest
-      if(stockHistory.size == 0){
-        val newPrice = stockQuote.newPrice(symbol, 0.0)//TODO may get opening price
+      if (stockHistory.size == 0) {
+        val newPrice = stockQuote.newPrice(symbol, 0.0) //TODO may get opening price
         Logger.info("got new price " + symbol + " -> " + newPrice)
         stockHistory = stockHistory :+ newPrice
         // notify watchers
         watchers.foreach(_ ! StockUpdate(symbol, newPrice))
-      }else {
+      } else {
         val newPrice = stockQuote.newPrice(symbol, stockHistory.last.doubleValue())
-        Logger.info("got new price " + symbol + " -> " +newPrice)
+        Logger.info("got new price " + symbol + " -> " + newPrice)
         stockHistory = stockHistory.drop(1) :+ newPrice
         // notify watchers
         watchers.foreach(_ ! StockUpdate(symbol, newPrice))

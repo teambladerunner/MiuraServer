@@ -3,13 +3,14 @@ package controllers
 import akka.actor.{ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
-import model.dataobjects.UserDetail
+import model.dataobjects.{Trade, UserDetail}
 import model.user._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, Cookie, Request}
 import play.libs.Akka
 import play.mvc.Http.HeaderNames
+import Global._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -95,20 +96,32 @@ object Users extends play.api.mvc.Controller {
     }
   }
 
+  def newTrade = Action.async(parse.json) { request =>
+    Future {
+      Logger.info(request.body.toString())
+      val user = getUser(request)
+      val trade: Trade = Trade.buildFromJSON(user, request.body.toString())
+
+      val duration = Duration(5, SECONDS)
+      implicit val timeout: Timeout = new Timeout(duration)
+      //let the user state actor update the database and  wait for its result as a future
+      val future = userStateActor ask new NewTradeRq(trade)
+      val result = Await.result(future, timeout.duration)
+      result match {
+        case Success() => Ok(jsonify("true")).withHeaders(
+          HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*"
+        )
+        case Error(_) => BadRequest(jsonify(result.asInstanceOf[Error].description))
+        case _ => BadRequest(jsonify("false"))
+      }
+    }
+  }
+
   def jsonify(status: String): JsValue = {
     JsObject(Seq(
       "name" -> JsString("status"),
       "value" -> JsString(status)
     ))
-  }
-
-  def getUser(request: Request[AnyContent]): String = {
-    val cookie: Option[Cookie] = request.cookies.get("authid")
-    val headerValue: Option[String] = request.headers.get("authid")
-    headerValue match {
-      case None => throw new Exception("The user has login information associated with the session")
-      case _ => headerValue.get
-    }
   }
 
   // a sample action using an authorization implementation

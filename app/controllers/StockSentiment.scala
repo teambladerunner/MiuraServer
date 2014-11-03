@@ -2,7 +2,7 @@ package controllers
 
 import play.api.Play
 import play.api.Play.current
-import play.api.libs.json.{JsString, JsValue, Json}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.libs.ws._
 import play.api.mvc._
 
@@ -66,6 +66,19 @@ object StockSentiment extends Controller {
     futureStockSentiments.recover {
       case nsee: NoSuchElementException =>
         InternalServerError(Json.obj("error" -> JsString("Could not fetch the tweets")))
+    }
+  }
+
+  def getForServer(symbol: String): Future[JsObject] = {
+    val futureStockSentiments: Future[JsObject] = for {
+      tweets <- getTweets(symbol) // get tweets that contain the stock symbol
+      futureSentiments = loadSentimentFromTweets(tweets.json) // queue web requests each tweets' sentiments
+      sentiments <- Future.sequence(futureSentiments) // when the sentiment responses arrive, set them
+    } yield sentimentJson(sentiments)
+
+    futureStockSentiments.recover {
+      case nsee: NoSuchElementException =>
+        Json.obj("error" -> JsString("Could not fetch the tweets"))
     }
   }
 }
