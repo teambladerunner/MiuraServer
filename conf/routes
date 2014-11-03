@@ -16,6 +16,8 @@ GET     /custom/logout                  @controllers.CustomLoginController.logou
 GET     /                               @controllers.Application.index
 GET     /ws                             @controllers.Application.ws
 GET     /sse                            controllers.StockFeed.sse
+GET     /sseStockFeed/:symbol           controllers.StockFeed.sseStockFeed.get(symbol)
+GET     /stocks                         controllers.StockFeed.getAllStocks.get
 GET     /sentiment/:symbol              controllers.StockSentiment.get(symbol)
 
 # GET     /stocks get the stock summary of all stocks (list)
@@ -30,7 +32,7 @@ GET     /sentiment/:symbol              controllers.StockSentiment.get(symbol)
 
 GET     /user/profile                   controllers.Users.getUserPersonalInfo()
 GET     /user/portfolio                 controllers.Users.getUserPortfolio()
-GET     /user/portfolio/trades  controllers.Users.getUserTradeHistory()
+GET     /user/portfolio/trades          controllers.Users.getUserTradeHistory()
 POST    /user                           controllers.Users.newUser()
 PUT     /user                           controllers.Users.updateSettings()
 
