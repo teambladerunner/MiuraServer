@@ -1,5 +1,7 @@
 package model.user
 
+import java.math.BigDecimal
+
 import anorm._
 import model.dataobjects.db.{DB, DBFacade}
 import model.dataobjects.{Trade, UserDetail, UserStock}
@@ -47,9 +49,9 @@ class UserDBModel extends DBFacade {
   }
 
   def createUser(userDetail: UserDetail): Unit = {
-    DB.withConnection { implicit c =>
-      SQL("insert into MIURA.GAMEUSER(USERIDPK, USERPASSWORD, FIRSTNAME ,LASTNAME, EMAIL, TWITTERHANDLE, FACEBOOKHANDLE, GOOGLEHANDLE, LINKEDINHANDLE, LOCALEID, AVATARID) " +
-        "values ({userIdPk}, {password}, {firstName}, {lastName}, {email}, {twitterHandle}, {facebookHandle}, {googleHandle}, {linkedinHandle}, {localeId}, {avatarId})").on(
+    DB.withTransaction { implicit c =>
+      SQL("insert into MIURA.GAMEUSER(USERIDPK, USERPASSWORD, FIRSTNAME ,LASTNAME, EMAIL, TWITTERHANDLE, FACEBOOKHANDLE, GOOGLEHANDLE, LINKEDINHANDLE, LOCALEID, AVATARID, CASH) " +
+        "values ({userIdPk}, {password}, {firstName}, {lastName}, {email}, {twitterHandle}, {facebookHandle}, {googleHandle}, {linkedinHandle}, {localeId}, {avatarId}, {cash})").on(
           "userIdPk" -> Platform.currentTime.toString,
           "password" -> userDetail.getPassword,
           "firstName" -> userDetail.getFirstName,
@@ -60,13 +62,14 @@ class UserDBModel extends DBFacade {
           "googleHandle" -> "",
           "linkedinHandle" -> "",
           "localeId" -> "",
-          "avatarId" -> ""
+          "avatarId" -> "",
+          "cash" -> new BigDecimal("25000.00")
         ).executeUpdate()
     }
   }
 
   def createTrade(trade: Trade): Unit = {
-    DB.withConnection { implicit c =>
+    DB.withTransaction { implicit c =>
       SQL("INSERT INTO MIURA.USERPORTFOLIO(  TIMEPK,  QUOTEID,  SYMBOL,  UNITS,  PRICE,  BUYSELL,  USERID) " +
         "VALUES(  {timepk},  {quoteid},  {symbol},  {units},  {rate},  {buysell},  {userid})").on(
           "timepk" -> Platform.currentTime.toString,
@@ -83,10 +86,10 @@ class UserDBModel extends DBFacade {
   def updateUser(userDetail: UserDetail): Unit = {
     Logger.info(userDetail.getPassword + " " + userDetail.getPkid)
     try {
-      DB.withConnection { implicit c =>
+      DB.withTransaction { implicit c =>
         SQL("update MIURA.GAMEUSER set USERIDPK = {userIdPk}, USERPASSWORD = {password}, FIRSTNAME = {firstName}," +
           "LASTNAME = {lastName}, EMAIL = {email}, TWITTERHANDLE = {twitterHandle}, FACEBOOKHANDLE = {facebookHandle}, " +
-          "GOOGLEHANDLE = {googleHandle}, LINKEDINHANDLE = {linkedinHandle}, LOCALEID = {localeId}, AVATARID = {avatarId} " +
+          "GOOGLEHANDLE = {googleHandle}, LINKEDINHANDLE = {linkedinHandle}, LOCALEID = {localeId}, AVATARID = {avatarId}, CASH = {cash} " +
           " where USERIDPK = {userIdPk}").on(
             "userIdPk" -> userDetail.getPkid,
             "password" -> userDetail.getPassword,
@@ -98,7 +101,8 @@ class UserDBModel extends DBFacade {
             "googleHandle" -> "",
             "linkedinHandle" -> "",
             "localeId" -> userDetail.getLocaleId,
-            "avatarId" -> userDetail.getAvatarID
+            "avatarId" -> userDetail.getAvatarID,
+            "cash" -> userDetail.getCash
           ).executeUpdate()
       }
     } catch {

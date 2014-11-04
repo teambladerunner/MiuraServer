@@ -111,6 +111,7 @@ public class SpringJDBCQueries {
         public UserDetail mapRow(ResultSet rs, int rowNum) throws SQLException {
             UserDetail userDetail = new UserDetail();
             userDetail.setPkid(rs.getString("USERIDPK"));
+            userDetail.setPassword(rs.getString("USERPASSWORD"));
             userDetail.setAvatarID(rs.getString("AVATARID"));
             userDetail.setEmail(rs.getString("EMAIL"));
             userDetail.setFirstName(rs.getString("FIRSTNAME"));

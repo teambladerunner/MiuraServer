@@ -6,7 +6,6 @@ import play.Logger;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -156,6 +155,11 @@ public final class UserDetail {
         userDetail.setPassword(keyValues.get("password"));
         userDetail.setLocaleId(keyValues.get("locale"));
         userDetail.setAvatarID(keyValues.get("avatarId"));
+        try {
+            userDetail.setCash(new BigDecimal(keyValues.get("cash")));
+        } catch (Exception exception) {
+
+        }
         //TODO validate password 2
         keyValues.get("password2");
         return userDetail;
@@ -172,21 +176,30 @@ public final class UserDetail {
         mergedUserDetail.setPassword(getDbFriendly(isEmpty(newUserDetail.getPassword()) ? oldUserDetail.getPassword() : newUserDetail.getPassword()));
         mergedUserDetail.setPhoneNumber(getDbFriendly(isEmpty(newUserDetail.getPhoneNumber()) ? oldUserDetail.getPhoneNumber() : newUserDetail.getPhoneNumber()));
         mergedUserDetail.setPkid(getDbFriendly(isEmpty(newUserDetail.getPkid()) ? oldUserDetail.getPkid() : newUserDetail.getPkid()));
+        mergedUserDetail.setPkid(getDbFriendly(isEmpty(newUserDetail.getCash()) ? oldUserDetail.getPkid() : newUserDetail.getPkid()));
         return mergedUserDetail;
     }
 
-    private static boolean isEmpty(String someString){
-        if(someString == null || someString.isEmpty()){
+    private static boolean isEmpty(String someString) {
+        if (someString == null || someString.isEmpty()) {
             return true;
-        }else{
+        } else {
             return false;
         }
     }
 
-    private static String getDbFriendly(String someString){
-        if(someString == null){
+    private static boolean isEmpty(BigDecimal someNumber) {
+        if (someNumber == null || someNumber.signum() == 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static String getDbFriendly(String someString) {
+        if (someString == null) {
             return "";
-        }else{
+        } else {
             return someString;
         }
     }

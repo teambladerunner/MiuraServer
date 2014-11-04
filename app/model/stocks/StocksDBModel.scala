@@ -16,7 +16,7 @@ class StocksDBModel extends DBFacade {
   }
 
   def updateUploadTime(): Unit = {
-    DB.withConnection { implicit c =>
+    DB.withTransaction { implicit c =>
       SQL("UPDATE MIURA.MIURAENV SET PROPVALUE = {currentTime} WHERE PROPKEY = {lastNasdaqUpload}").on(
         "currentTime" -> Platform.currentTime,
         "lastNasdaqUpload" -> "LASTNASDAQUPLOAD"
@@ -25,7 +25,7 @@ class StocksDBModel extends DBFacade {
   }
 
   def insertNASDAQDataToTable(nasdaqData: (String, String, String, String, String)): Unit = {
-    DB.withConnection { implicit c =>
+    DB.withTransaction { implicit c =>
       SQL("insert into MIURA.NASDAQUPDATE(TIMEPK, SYMBOL, LASTSALE ,MARKETCAP, SECTOR, INDUSTRY) values ({timePk}, {symbol}, {lastSale}, {marketCap}, {sector}, {industry})").on(
         "timePk" -> Platform.currentTime,
         "symbol" -> nasdaqData._1.replace("\"", ""),

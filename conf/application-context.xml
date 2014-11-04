@@ -11,12 +11,20 @@
     <!--<property name="password" value="${jdbc.password}"/>-->
     <!--</bean>-->
 
-    <!--<context:property-placeholder location="jdbc.properties"/>-->
+    <!--<context:property-placeholder location="jdbc.properties"/>
 
     <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
         <property name="driverClassName" value="com.ibm.db2.jcc.DB2Driver"/>
         <property name="url" value="jdbc:db2://blrublp136:50000/ooofoooh"/>
         <property name="username" value="db2admin"/>
+        <property name="password" value="db2@dm1n"/>
+    </bean>
+    -->
+
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="com.microsoft.sqlserver.jdbc.SQLServerDriver"/>
+        <property name="url" value="jdbc:sqlserver://localhost;DatabaseName=OOFOOH"/>
+        <property name="username" value="sa"/>
         <property name="password" value="db2@dm1n"/>
     </bean>
 
