@@ -7,10 +7,10 @@ import controllers.Global._
 import model.dataobjects.{Trade, UserDetail}
 import model.user._
 import play.api.Logger
-import play.api.mvc.Action
+import play.api.libs.json._
+import play.api.mvc.{Action, AnyContentAsJson}
 import play.libs.Akka
 import play.mvc.Http.HeaderNames
-import play.api.libs.json._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -19,6 +19,29 @@ import scala.concurrent.{Await, Future}
 object Users extends play.api.mvc.Controller {
 
   import play.api.libs.concurrent.Execution.Implicits.defaultContext
+
+  def loginMiuraUser = Action.async { request =>
+    Future {
+      Logger.info(request.body.toString())
+      val content = request.body
+      var requestBody = ""
+      content match {
+        case AnyContentAsJson(_) => requestBody = Json.stringify(content.asJson.get)
+        case _ => requestBody = content.toString
+      }
+      Logger.info(requestBody)
+      val userDetail = UserDetail.buildUserDetailFromJSON(requestBody)
+      Logger.info(userDetail.getEmail + " " + userDetail.getPassword)
+      val password = userDetail.getPassword
+      val user = new UserDBModel().springJDBCQueries.selectUserByEmail(userDetail.getEmail)
+      if (user != null && user.getPassword.equals(password)) {
+        Logger.info("wtf 3")
+        Ok(JsObject(Seq("authid" -> JsString(user.getEmail))))
+      } else {
+        BadRequest(jsonify("invalid user id"))
+      }
+    }
+  }
 
   def getUserPersonalInfo = Action.async { request =>
     Future {
@@ -31,7 +54,7 @@ object Users extends play.api.mvc.Controller {
   def getUserPortfolio = Action.async { request =>
     Future {
       val userId = getUser(request)
-      Logger.info(new UserPortfolio(userId).asJSON)
+      Logger.info("return portfolio for " + userId)
       Ok(new UserPortfolio(userId).asJSON)
     }
   }

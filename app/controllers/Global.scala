@@ -102,7 +102,7 @@ object Global extends WithFilters(AccessLog, CORSFilter) with GlobalSettings {
     val cookie: Option[Cookie] = request.cookies.get("authid")
     val headerValue: Option[String] = request.headers.get("authid")
     headerValue match {
-      case None => throw new Exception("The user has login information associated with the session")
+      case None => throw new Exception("You are not logged in")
       case _ => headerValue.get
     }
   }

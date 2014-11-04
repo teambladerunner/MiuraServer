@@ -10,7 +10,10 @@ class UserPortfolio(user: String) {
 
   val userTradeHistory: Seq[Trade] = new UserDBModel().getUserTradeHistory(user)
 
-  val portfolio: UserPortfolioSummary = new PortfolioBuilder().buildPortfolio(userStocks, userTradeHistory)
+  val portfolio: UserPortfolioSummary = {
+    play.api.Logger.info("built portfolio for " + user)
+    new PortfolioBuilder().buildPortfolio(userStocks, userTradeHistory)
+  }
 
   implicit val UserStockSummary = new Writes[UserStockSummary] {
     def writes(userStockSummary: UserStockSummary) = Json.obj(

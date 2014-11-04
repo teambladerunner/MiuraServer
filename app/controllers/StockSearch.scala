@@ -14,19 +14,27 @@ object StockSearch extends Controller {
 
   def search(symbol: String) = Action.async { request =>
     Future {
-      val duration = Duration(10, SECONDS)
+      //Global.getUser(request)
+      val duration = Duration(20, SECONDS)
       implicit val timeout: Timeout = new Timeout(duration)
 
       val stockSentiment: Future[JsValue] = StockSentiment.getForServer(symbol)
       val current = new java.math.BigDecimal(Global.stockQuote.newPrice(symbol, 0.0).toString)
-      val nasdaqStockInfo = new StocksDBModel().springJDBCQueries.getStockDailyInfo(symbol)
-      val open = new java.math.BigDecimal(nasdaqStockInfo.getLastSaleRate.toString)
+      val nasdaqStockInfo = Option(new StocksDBModel().springJDBCQueries.getStockDailyInfo(symbol))
+      val open = nasdaqStockInfo match {
+        case None => new java.math.BigDecimal("0.0")
+        case _ => new java.math.BigDecimal(nasdaqStockInfo.get.getLastSaleRate.toString)
+      }
+      val marketCap = nasdaqStockInfo match {
+        case None => new java.math.BigDecimal("0.0")
+        case _ => new java.math.BigDecimal(nasdaqStockInfo.get.getMarketCap.toString)
+      }
 
       val stockSummary: JsValue = //fetch daily summary
         JsObject(Seq(
           "current_price" -> JsNumber(current),
           "open_price" -> JsNumber(open),
-          "market_cap" -> JsNumber(new java.math.BigDecimal(nasdaqStockInfo.getMarketCap.toString)),
+          "market_cap" -> JsNumber(marketCap),
           "day_change_amount" -> JsNumber(current.subtract(open)),
           "day_change_percent" -> JsNumber((current.doubleValue() / open.doubleValue()) * 100)
         ))

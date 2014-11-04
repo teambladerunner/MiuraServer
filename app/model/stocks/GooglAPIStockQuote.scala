@@ -22,16 +22,16 @@ class GoogleAPIStockQuote extends StockQuote {
     val futureResult: Future[String] = WS.url(googleUrl).get().map {
       response => response.body.toString
     }
-    val result2 = Await.result(futureResult, 2 second)
     try {
+      val result2 = Await.result(futureResult, 15 second)
       val jsonStr = result2.substring(4, result2.toString.length - 1)
-      play.api.Logger.info(jsonStr)
+      //play.api.Logger.info(jsonStr)
       val json: JsValue = Json.parse(jsonStr)
       val currentPrices: Seq[String] = (json \\ "l_cur").map(_.as[String])
       return currentPrices(0).toDouble
     } catch {
       case exception: Exception => {
-        play.api.Logger.info("error substring for " + result2)
+        play.api.Logger.info(exception.getLocalizedMessage)
         return lastPrice
       }
     }

@@ -31,6 +31,7 @@ GET     /sentiment/:symbol              controllers.StockSentiment.get(symbol)
 #GET     /user/:userId/portfolio/trades  @controllers.Users.getUserTradeHistory(userId)
 #PUT     /user                           @controllers.Users.newUser()
 
+PUT     /user/login                     controllers.Users.loginMiuraUser()
 GET     /user/profile                   controllers.Users.getUserPersonalInfo()
 GET     /user/portfolio                 controllers.Users.getUserPortfolio()
 GET     /user/portfolio/trades          controllers.Users.getUserTradeHistory()
