@@ -12,7 +12,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext
 import play.api.mvc.{Cookie, Request, WithFilters}
 import play.api.{Logger, _}
 import securesocial.core.RuntimeEnvironment
-import securesocial.core.providers.{GoogleProvider, UsernamePasswordProvider}
+import securesocial.core.providers.GoogleProvider
 
 import scala.collection.immutable.ListMap
 import scala.compat.Platform
@@ -84,13 +84,16 @@ object Global extends WithFilters(AccessLog, CORSFilter) with GlobalSettings {
       //      ),
       include(
         new GoogleProvider(routes, cacheService, oauth2ClientFor(GoogleProvider.Google))
-      ),
+      ) //,
+      //      include(
+      //        new LinkedInOAuth2Provider(routes, cacheService, oauth2ClientFor(LinkedInOAuth2Provider.LinkedIn))
+      //      ),
       //      include(
       //        new LinkedInProvider(routes, cacheService, oauth1ClientFor(LinkedInProvider.LinkedIn))
-      //      ) //,
-      include(
-        new UsernamePasswordProvider[DemoUser](userService, avatarService, viewTemplates, passwordHashers)
-      )
+      //      ),
+      //      include(
+      //        new UsernamePasswordProvider[DemoUser](userService, avatarService, viewTemplates, passwordHashers)
+      //      )
     )
     override lazy val eventListeners = List(new MyEventListener())
   }

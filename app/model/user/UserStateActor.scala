@@ -1,5 +1,7 @@
 package model.user
 
+import java.math.BigDecimal
+
 import akka.actor.UntypedActor
 import model.dataobjects.{Trade, UserDetail}
 import play.api.Logger
@@ -39,7 +41,17 @@ class UserStateActor extends UntypedActor {
         val oldUserDetail: Option[UserDetail] = Option(userDbModel.springJDBCQueries.selectUserByEmail(newTradeRq.trade.getUser))
         oldUserDetail match {
           case None => sender() ! new Error("The email address does not exist")
-          case _ => userDbModel.createTrade(newTradeRq.trade)
+          case _ => {
+            userDbModel.createTrade(newTradeRq.trade)
+            val newUserDetail = oldUserDetail.get
+            val cashTraded = newTradeRq.trade.getRate * newTradeRq.trade.getUnits
+            if (newTradeRq.trade.getBuySell.equalsIgnoreCase("B")) {
+              newUserDetail.setCash(newUserDetail.getCash.subtract(new BigDecimal(cashTraded.toString)))
+            } else {
+              newUserDetail.setCash(newUserDetail.getCash.add(new BigDecimal(cashTraded.toString)))
+            }
+            userDbModel.updateUser(newUserDetail)
+          }
         }
       }
       sender() ! new Success()

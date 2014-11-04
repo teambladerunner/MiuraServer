@@ -1,9 +1,6 @@
 package model.dataobjects.db;
 
-import model.dataobjects.EnvProps;
-import model.dataobjects.Trade;
-import model.dataobjects.UserDetail;
-import model.dataobjects.UserStock;
+import model.dataobjects.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -103,7 +100,7 @@ public class SpringJDBCQueries {
     public UserDetail selectUserByEmail(String userEmail) {
         List<UserDetail> userDetails = this.jdbcTemplate.query(
                 "select USERIDPK, USERPASSWORD, FIRSTNAME ,LASTNAME, EMAIL, TWITTERHANDLE, FACEBOOKHANDLE, " +
-                        "GOOGLEHANDLE, LINKEDINHANDLE, LOCALEID, AVATARID " +
+                        "GOOGLEHANDLE, LINKEDINHANDLE, LOCALEID, AVATARID, CASH " +
                         "from MIURA.GAMEUSER where EMAIL = ?",
                 new Object[]{userEmail},
                 new UserDetailMapper());
@@ -119,7 +116,29 @@ public class SpringJDBCQueries {
             userDetail.setFirstName(rs.getString("FIRSTNAME"));
             userDetail.setLastName(rs.getString("LASTNAME"));
             userDetail.setLocaleId(rs.getString("LOCALEID"));
+            userDetail.setCash(rs.getBigDecimal("CASH"));
             return userDetail;
+        }
+    }
+
+    public NASDAQStockInfo getStockDailyInfo(String symbol) {
+        List<NASDAQStockInfo> stockInfo = this.jdbcTemplate.query(
+                "select TIMEPK, SYMBOL, SECTOR ,MARKETCAP, LASTSALE, INDUSTRY " +
+                        "from MIURA.NASDAQUPDATE where SYMBOL = ? ORDER BY TIMEPK DESC",
+                new Object[]{symbol},
+                new NASDAQStockInfoMapper());
+        return stockInfo.size() > 0 ? stockInfo.get(0) : null;
+    }
+
+    private static final class NASDAQStockInfoMapper implements RowMapper<NASDAQStockInfo> {
+        public NASDAQStockInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+            NASDAQStockInfo stockInfo = new NASDAQStockInfo();
+            stockInfo.setSymbol(rs.getString("TIMEPK"));
+            stockInfo.setLastSaleRate(rs.getDouble("LASTSALE"));
+            stockInfo.setMarketCap(rs.getDouble("MARKETCAP"));
+            stockInfo.setIndustry(rs.getString("INDUSTRY"));
+            stockInfo.setSector(rs.getString("SECTOR"));
+            return stockInfo;
         }
     }
 

@@ -3,14 +3,14 @@ package controllers
 import akka.actor.{ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
+import controllers.Global._
 import model.dataobjects.{Trade, UserDetail}
 import model.user._
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc.{Action, AnyContent, Cookie, Request}
+import play.api.mvc.Action
 import play.libs.Akka
 import play.mvc.Http.HeaderNames
-import Global._
+import play.api.libs.json._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -67,45 +67,15 @@ object Users extends play.api.mvc.Controller {
 
   def updateSettings = Action.async(parse.json) { request =>
     Future {
-      Logger.info("got update rq " + request.cookies.get("authid"))
-      Logger.info("got update rq " + request.headers.get("authid"))
-      //val cookie: Option[Cookie] = request.cookies.get("authid")
-      val headerValue: Option[String] = request.headers.get("authid")
-      headerValue match {
-        case None => BadRequest(jsonify("bad cookie request"))
-        case _ => {
-          val userId = headerValue.get
-          val email = new UserDBModel().springJDBCQueries.selectUserByEmail(userId).getEmail
-          val userDetail = UserDetail.buildUserDetailFromJSON(request.body.toString())
-          userDetail.setEmail(email)
-
-          val duration = Duration(5, SECONDS)
-          implicit val timeout: Timeout = new Timeout(duration)
-          //let the user state actor update the database and  wait for its result as a future
-          val future = userStateActor ask new UpdateUserRq(userDetail)
-          val result = Await.result(future, timeout.duration)
-          result match {
-            case Success() => Ok(jsonify("true")).withHeaders(
-              HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*"
-            )
-            case Error(_) => BadRequest(jsonify(result.asInstanceOf[Error].description))
-            case _ => BadRequest(jsonify("false"))
-          }
-        }
-      }
-    }
-  }
-
-  def newTrade = Action.async(parse.json) { request =>
-    Future {
-      Logger.info(request.body.toString())
-      val user = getUser(request)
-      val trade: Trade = Trade.buildFromJSON(user, request.body.toString())
+      val userId = Global.getUser(request)
+      val email = new UserDBModel().springJDBCQueries.selectUserByEmail(userId).getEmail
+      val userDetail = UserDetail.buildUserDetailFromJSON(request.body.toString())
+      userDetail.setEmail(email)
 
       val duration = Duration(5, SECONDS)
       implicit val timeout: Timeout = new Timeout(duration)
       //let the user state actor update the database and  wait for its result as a future
-      val future = userStateActor ask new NewTradeRq(trade)
+      val future = userStateActor ask new UpdateUserRq(userDetail)
       val result = Await.result(future, timeout.duration)
       result match {
         case Success() => Ok(jsonify("true")).withHeaders(
@@ -115,6 +85,29 @@ object Users extends play.api.mvc.Controller {
         case _ => BadRequest(jsonify("false"))
       }
     }
+  }
+
+
+  def newTrade = Action.async(parse.json) {
+    request =>
+      Future {
+        Logger.info(request.body.toString())
+        val user = getUser(request)
+        val trade: Trade = Trade.buildFromJSON(user, request.body.toString())
+
+        val duration = Duration(5, SECONDS)
+        implicit val timeout: Timeout = new Timeout(duration)
+        //let the user state actor update the database and  wait for its result as a future
+        val future = userStateActor ask new NewTradeRq(trade)
+        val result = Await.result(future, timeout.duration)
+        result match {
+          case Success() => Ok(jsonify(request.body.toString())).withHeaders(
+            HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*"
+          )
+          case Error(_) => BadRequest(jsonify(result.asInstanceOf[Error].description))
+          case _ => BadRequest(jsonify("false"))
+        }
+      }
   }
 
   def jsonify(status: String): JsValue = {

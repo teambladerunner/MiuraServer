@@ -1,6 +1,7 @@
 package controllers
 
 import akka.util.Timeout
+import model.stocks.StocksDBModel
 import play.api.libs.json._
 import play.api.mvc.{Action, _}
 import play.mvc.Http.HeaderNames
@@ -13,18 +14,21 @@ object StockSearch extends Controller {
 
   def search(symbol: String) = Action.async { request =>
     Future {
-      //val userId = Global.getUser(request)
-      val duration = Duration(5, SECONDS)
+      val duration = Duration(10, SECONDS)
       implicit val timeout: Timeout = new Timeout(duration)
 
       val stockSentiment: Future[JsValue] = StockSentiment.getForServer(symbol)
+      val current = new java.math.BigDecimal(Global.stockQuote.newPrice(symbol, 0.0).toString)
+      val nasdaqStockInfo = new StocksDBModel().springJDBCQueries.getStockDailyInfo(symbol)
+      val open = new java.math.BigDecimal(nasdaqStockInfo.getLastSaleRate.toString)
+
       val stockSummary: JsValue = //fetch daily summary
         JsObject(Seq(
-          "current_price" -> JsNumber(new java.math.BigDecimal(Global.stockQuote.newPrice(symbol, 0.0).toString)),
-          "open_price" -> JsNumber(3.0),
-          "market_cap" -> JsNumber(10.0),
-          "day_change_amount" -> JsNumber(10.0),
-          "day_change_percent" -> JsNumber(10.0)
+          "current_price" -> JsNumber(current),
+          "open_price" -> JsNumber(open),
+          "market_cap" -> JsNumber(new java.math.BigDecimal(nasdaqStockInfo.getMarketCap.toString)),
+          "day_change_amount" -> JsNumber(current.subtract(open)),
+          "day_change_percent" -> JsNumber((current.doubleValue() / open.doubleValue()) * 100)
         ))
 
       val json: JsValue = JsObject(Seq(

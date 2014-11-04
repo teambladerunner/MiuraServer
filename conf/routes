@@ -15,7 +15,7 @@ GET     /custom/logout                  @controllers.CustomLoginController.logou
 # MIURA Services
 GET     /                               @controllers.Application.index
 GET     /ws                             @controllers.Application.ws
-GET     /sse                            controllers.StockFeed.sse
+# GET     /sse                            controllers.StockFeed.sse
 GET     /sseSymbolFeed/:symbol          controllers.StockFeed.sseSymbolFeed(symbol)
 GET     /stocks                         controllers.StockFeed.getAllStocks
 GET     /stocks/search/:symbol          controllers.StockSearch.search(symbol)

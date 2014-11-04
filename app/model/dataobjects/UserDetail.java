@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import play.Logger;
 
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +29,8 @@ public final class UserDetail {
     private String avatarID;
 
     private String pkid;
+
+    private BigDecimal cash;
 
     public String getFirstName() {
         return firstName;
@@ -99,6 +102,14 @@ public final class UserDetail {
 
     public void setPkid(String pkid) {
         this.pkid = pkid;
+    }
+
+    public BigDecimal getCash() {
+        return cash;
+    }
+
+    public void setCash(BigDecimal cash) {
+        this.cash = cash;
     }
 
     public String toJSON() {

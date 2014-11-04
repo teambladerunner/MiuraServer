@@ -43,16 +43,16 @@ object StockFeed extends Controller {
 //    }
 //  }
 
-  def sse() = Action {
-    implicit req => {
-      val (out, wsOutChannel) = Concurrent.broadcast[JsValue]
-      val userActor: ActorRef = Akka.system.actorOf(Props(new UserActorSSE("zubin", (out, wsOutChannel))))
-      val watchStock: WatchStock = new WatchStock("GOOGL")
-      StocksActor.stocksActor.tell(watchStock, userActor)
-      //Ok.feed(out &> EventSource()).as("text/event-stream")
-      Ok.chunked(out &> EventSource()).as("text/event-stream")
-    }
-  }
+//  def sse() = Action {
+//    implicit req => {
+//      val (out, wsOutChannel) = Concurrent.broadcast[JsValue]
+//      val userActor: ActorRef = Akka.system.actorOf(Props(new UserActorSSE("zubin", (out, wsOutChannel))))
+//      val watchStock: WatchStock = new WatchStock("GOOGL")
+//      StocksActor.stocksActor.tell(watchStock, userActor)
+//      //Ok.feed(out &> EventSource()).as("text/event-stream")
+//      Ok.chunked(out &> EventSource()).as("text/event-stream")
+//    }
+//  }
 
   def sseSymbolFeed(symbol: String) = Action {
     implicit req => {

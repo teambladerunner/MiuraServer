@@ -14,10 +14,10 @@ import play.mvc.WebSocket
  */
 class UserActor(out: WebSocket.Out[JsonNode]) extends UntypedActor {
 
-  val defaultStocks: Seq[UserStock] = new UserDBModel().getUserStocks("zubin")
+  val defaultStocks: Seq[String] = Seq("GOOGL", "AAPL", "MSFT")
 
   for (userStock <- defaultStocks) {
-    StocksActor.stocksActor.tell(new WatchStock(userStock.getSymbol), getSelf)
+    StocksActor.stocksActor.tell(new WatchStock(userStock), getSelf)
   }
 
   @scala.throws[Exception](classOf[Exception])

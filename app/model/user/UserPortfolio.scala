@@ -1,7 +1,7 @@
 package model.user
 
 import model.dataobjects.{Trade, UserStock}
-import model.stocks.{PortfolioBuilder, UserStockSummary}
+import model.stocks.{UserPortfolioSummary, PortfolioBuilder, UserStockSummary}
 import play.api.libs.json._
 
 class UserPortfolio(user: String) {
@@ -10,7 +10,7 @@ class UserPortfolio(user: String) {
 
   val userTradeHistory: Seq[Trade] = new UserDBModel().getUserTradeHistory(user)
 
-  val portfolio: List[UserStockSummary] = new PortfolioBuilder().buildPortfolio(userStocks, userTradeHistory)
+  val portfolio: UserPortfolioSummary = new PortfolioBuilder().buildPortfolio(userStocks, userTradeHistory)
 
   implicit val UserStockSummary = new Writes[UserStockSummary] {
     def writes(userStockSummary: UserStockSummary) = Json.obj(
@@ -26,6 +26,13 @@ class UserPortfolio(user: String) {
       "unrealizedProfitPercentage" -> userStockSummary.unrealizedProfitPercentage)
   }
 
-  def asJSON = Json.stringify(Json.toJson(portfolio))
+  val json: JsValue = JsObject(Seq(
+    "user" -> JsString(user),
+    "cash_balance" -> JsNumber(new UserDBModel().springJDBCQueries.selectUserByEmail(user).getCash),
+    "current_vale_total" -> JsNumber(portfolio.currentValue),
+    "stocks" -> Json.toJson(portfolio.portfolio)
+  ))
+
+  def asJSON = Json.stringify(json)
 
 }

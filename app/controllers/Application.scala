@@ -5,9 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import model.stocks.{StocksActor, UnwatchStock, WatchStock}
 import model.user.{DemoUser, UserActor}
 import play.libs.{Akka, F}
-import play.mvc.Results.ok
-import play.mvc.{Result, WebSocket}
-import securesocial.core.{RuntimeEnvironment, _}
+import play.mvc.WebSocket
+import securesocial.core.RuntimeEnvironment
 
 /**
  * The main web controller that handles returning the index page, setting up a WebSocket, and watching a stock.
