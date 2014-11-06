@@ -18,7 +18,7 @@ class PortfolioBuilder {
     //userStocks.par.foreach(userStock => {
     userStocks.foreach(userStock => {
       val symbol = userStock.getSymbol
-      val currentMarketPrice = new GoogleAPIStockQuote().newPrice(symbol, 0.0).toFloat
+      val currentMarketPrice = 500.0F//new GoogleAPIStockQuote().newPrice(symbol, 0.0).toFloat
       //val tradeList: Option[parallel.ParSeq[Trade]] = tradesMap.get(symbol)
       totalCurrentMarketPrice = totalCurrentMarketPrice + currentMarketPrice
       val tradeList: Option[Seq[Trade]] = tradesMap.get(symbol)

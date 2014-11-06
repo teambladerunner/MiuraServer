@@ -56,6 +56,17 @@ object StockSentiment extends Controller {
     response + ("label" -> JsString(classification))
   }
 
+  def defaultSentimentJson() = {
+    val response = Json.obj(
+      "probability" -> Json.obj(
+        "neg" -> 0.1,
+        "neutral" -> 0.5,
+        "pos" -> 0.9
+      )
+    )
+    response + ("label" -> JsString("neutral"))
+  }
+
   def get(symbol: String): Action[AnyContent] = Action.async {
     val futureStockSentiments: Future[Result] = for {
       tweets <- getTweets(symbol) // get tweets that contain the stock symbol

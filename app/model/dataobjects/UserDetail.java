@@ -5,9 +5,12 @@ import play.Logger;
 
 import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.xml.bind.DatatypeConverter;
 
 public final class UserDetail {
 
@@ -30,6 +33,10 @@ public final class UserDetail {
     private String pkid;
 
     private BigDecimal cash;
+
+    private Integer level;
+
+    private Timestamp joinDate;
 
     public String getFirstName() {
         return firstName;
@@ -111,6 +118,22 @@ public final class UserDetail {
         this.cash = cash;
     }
 
+    public Integer getLevel() {
+        return level;
+    }
+
+    public void setLevel(Integer level) {
+        this.level = level;
+    }
+
+    public Timestamp getJoinDate() {
+        return joinDate;
+    }
+
+    public void setJoinDate(Timestamp joinDate) {
+        this.joinDate = joinDate;
+    }
+
     public String toJSON() {
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -132,6 +155,9 @@ public final class UserDetail {
         keyValueList.add(new KeyValue("password", password));
         keyValueList.add(new KeyValue("locale", localeId));
         keyValueList.add(new KeyValue("avatarId", avatarID));
+        keyValueList.add(new KeyValue("cash", cash.toString()));
+        keyValueList.add(new KeyValue("level", level.toString()));
+        keyValueList.add(new KeyValue("joinDate", joinDate.toString()));
 
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -160,6 +186,16 @@ public final class UserDetail {
         } catch (Exception exception) {
 
         }
+        try {
+            userDetail.setLevel(new Integer(keyValues.get("cash")));
+        } catch (Exception exception) {
+            userDetail.setLevel(1);
+        }
+        try {
+            userDetail.setJoinDate(new Timestamp(DatatypeConverter.parseDateTime(keyValues.get("joinDate")).getTimeInMillis()));
+        } catch (Exception exception) {
+            userDetail.setJoinDate(new Timestamp(System.currentTimeMillis()));
+        }
         //TODO validate password 2
         keyValues.get("password2");
         return userDetail;
@@ -175,8 +211,10 @@ public final class UserDetail {
         mergedUserDetail.setMobileNumber(getDbFriendly(isEmpty(newUserDetail.getMobileNumber()) ? oldUserDetail.getMobileNumber() : newUserDetail.getMobileNumber()));
         mergedUserDetail.setPassword(getDbFriendly(isEmpty(newUserDetail.getPassword()) ? oldUserDetail.getPassword() : newUserDetail.getPassword()));
         mergedUserDetail.setPhoneNumber(getDbFriendly(isEmpty(newUserDetail.getPhoneNumber()) ? oldUserDetail.getPhoneNumber() : newUserDetail.getPhoneNumber()));
-        mergedUserDetail.setPkid(getDbFriendly(isEmpty(newUserDetail.getPkid()) ? oldUserDetail.getPkid() : newUserDetail.getPkid()));
-        mergedUserDetail.setPkid(getDbFriendly(isEmpty(newUserDetail.getCash()) ? oldUserDetail.getPkid() : newUserDetail.getPkid()));
+        mergedUserDetail.setPkid(oldUserDetail.getPkid());
+        mergedUserDetail.setCash(isBDEmpty(newUserDetail.getCash()) ? oldUserDetail.getCash() : newUserDetail.getCash());
+        mergedUserDetail.setLevel(isIntEmpty(newUserDetail.getLevel()) ? oldUserDetail.getLevel() : newUserDetail.getLevel());
+        mergedUserDetail.setJoinDate(oldUserDetail.getJoinDate());
         return mergedUserDetail;
     }
 
@@ -188,8 +226,16 @@ public final class UserDetail {
         }
     }
 
-    private static boolean isEmpty(BigDecimal someNumber) {
+    private static boolean isBDEmpty(BigDecimal someNumber) {
         if (someNumber == null || someNumber.signum() == 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean isIntEmpty(Integer someNumber) {
+        if (someNumber == null || someNumber == 0) {
             return true;
         } else {
             return false;

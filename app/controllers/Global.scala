@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.{ActorSystem, Cancellable, Props}
 import com.github.nscala_time.time.Imports._
-import controllers.filters.{AccessLog, CORSFilter}
+import controllers.filters.{AccessLog, CORSFilter, LoggingFilter}
 import model.stocks._
 import model.user.{DemoUser, InMemoryUserService, MyEventListener}
 import org.springframework.context.support.ClassPathXmlApplicationContext
@@ -19,7 +19,7 @@ import scala.compat.Platform
 import scala.concurrent.duration.Duration
 
 //object Global extends WithFilters(SecurityHeadersFilter()) with GlobalSettings {
-object Global extends WithFilters(AccessLog, CORSFilter) with GlobalSettings {
+object Global extends WithFilters(AccessLog, LoggingFilter, CORSFilter) with GlobalSettings {
   //object Global extends GlobalSettings {
 
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -38,7 +38,7 @@ object Global extends WithFilters(AccessLog, CORSFilter) with GlobalSettings {
 
   override def onStart(app: play.api.Application): Unit = {
     System.setProperty("java.net.preferIPv4Stack", "true")
-    Logger.info("IP v4 settings = " + System.getProperty("java.net.preferIPv4Stack"))
+    Logger.info("IP v4 settings = " + System.getProperty("java.net.preferIPv4Stack") + " and mode = " + play.api.Play.current.mode)
     super.onStart(app)
     //
     //    Logger.info("getting stock download actor...")

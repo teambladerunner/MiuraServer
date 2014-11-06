@@ -1,5 +1,6 @@
 package controllers.filters
 
+import play.api.Logger
 import play.api.mvc._
 
 import scala.concurrent.Future

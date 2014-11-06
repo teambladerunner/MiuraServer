@@ -51,12 +51,18 @@ object Users extends play.api.mvc.Controller {
     }
   }
 
-  def getUserPortfolio = Action.async { request =>
-    Future {
+//  def getUserPortfolio = Action.async { request =>
+//    Future {
+//      val userId = getUser(request)
+//      Logger.info("return portfolio for " + userId)
+//      Ok(new UserPortfolio(userId).asJSON)
+//    }
+//  }
+
+  def getUserPortfolio = Action { request =>
       val userId = getUser(request)
       Logger.info("return portfolio for " + userId)
       Ok(new UserPortfolio(userId).asJSON)
-    }
   }
 
   def getUserTradeHistory() = Action.async { request =>
@@ -122,6 +128,27 @@ object Users extends play.api.mvc.Controller {
         implicit val timeout: Timeout = new Timeout(duration)
         //let the user state actor update the database and  wait for its result as a future
         val future = userStateActor ask new NewTradeRq(trade)
+        val result = Await.result(future, timeout.duration)
+        result match {
+          case Success() => Ok(jsonify(request.body.toString())).withHeaders(
+            HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*"
+          )
+          case Error(_) => BadRequest(jsonify(result.asInstanceOf[Error].description))
+          case _ => BadRequest(jsonify("false"))
+        }
+      }
+  }
+
+  def levelUp = Action.async(parse.json) {
+    request =>
+      Future {
+        Logger.info(request.body.toString())
+        val user = getUser(request)
+
+        val duration = Duration(5, SECONDS)
+        implicit val timeout: Timeout = new Timeout(duration)
+        //let the user state actor update the database and  wait for its result as a future
+        val future = userStateActor ask new LevelUpRq(user)
         val result = Await.result(future, timeout.duration)
         result match {
           case Success() => Ok(jsonify(request.body.toString())).withHeaders(

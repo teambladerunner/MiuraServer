@@ -1,6 +1,7 @@
 package model.user
 
 import java.math.BigDecimal
+import java.sql.Timestamp
 
 import akka.actor.UntypedActor
 import model.dataobjects.{Trade, UserDetail}
@@ -17,13 +18,17 @@ class UserStateActor extends UntypedActor {
         val user: Option[UserDetail] = Option(userDbModel.springJDBCQueries.selectUserByEmail(newUserRq.userDetail.getEmail))
         user match {
           case None => {
+            val userDetail = newUserRq.userDetail
+            userDetail.setLevel(1)
+            userDetail.setCash(new BigDecimal("25000.00"))
+            userDetail.setJoinDate(new Timestamp(System.currentTimeMillis()))
             userDbModel.createUser(newUserRq.userDetail) // because the user does not exist
           }
           case _ => {
             sender() ! new Error("The email address is already reserved")
           }
         }
-      }
+      } else
       if (message.isInstanceOf[UpdateUserRq]) {
         Logger.info("got user state update message " + message)
         val updateUserRq: UpdateUserRq = message.asInstanceOf[UpdateUserRq]
@@ -33,7 +38,7 @@ class UserStateActor extends UntypedActor {
           case None => sender() ! new Error("The email address does not exist")
           case _ => userDbModel.updateUser(UserDetail.mergeForUpdate(updateUserRq.userDetail, oldUserDetail.get))
         }
-      }
+      } else
       if (message.isInstanceOf[NewTradeRq]) {
         Logger.info("got user trade message " + message)
         val newTradeRq: NewTradeRq = message.asInstanceOf[NewTradeRq]
@@ -42,6 +47,7 @@ class UserStateActor extends UntypedActor {
         oldUserDetail match {
           case None => sender() ! new Error("The email address does not exist")
           case _ => {
+            val level = ((userDbModel.springJDBCQueries.getUserTradeCount(newTradeRq.trade.getUser) + 1) / 5) + 1
             userDbModel.createTrade(newTradeRq.trade)
             val newUserDetail = oldUserDetail.get
             val cashTraded = newTradeRq.trade.getRate * newTradeRq.trade.getUnits
@@ -50,10 +56,16 @@ class UserStateActor extends UntypedActor {
             } else {
               newUserDetail.setCash(newUserDetail.getCash.add(new BigDecimal(cashTraded.toString)))
             }
+            newUserDetail.setLevel(level)
             userDbModel.updateUser(newUserDetail)
           }
         }
+      } else
+
+      if (message.isInstanceOf[LevelUpRq]) {
+
       }
+
       sender() ! new Success()
     } catch {
       case exception: Exception => {
@@ -66,9 +78,11 @@ class UserStateActor extends UntypedActor {
 
 case class NewUserRq(userDetail: UserDetail)
 
+case class UpdateUserRq(userDetail: UserDetail)
+
 case class NewTradeRq(trade: Trade)
 
-case class UpdateUserRq(userDetail: UserDetail)
+case class LevelUpRq(user: String)
 
 case class Success()
 

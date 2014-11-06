@@ -23,11 +23,11 @@ class GoogleAPIStockQuote extends StockQuote {
       response => response.body.toString
     }
     try {
-      val result2 = Await.result(futureResult, 15 second)
+      val result2 = Await.result(futureResult, 2 second)
       val jsonStr = result2.substring(4, result2.toString.length - 1)
-      //play.api.Logger.info(jsonStr)
       val json: JsValue = Json.parse(jsonStr)
       val currentPrices: Seq[String] = (json \\ "l_cur").map(_.as[String])
+      play.api.Logger.info("fetched current google api price for " + symbol + " " + currentPrices(0).toDouble)
       return currentPrices(0).toDouble
     } catch {
       case exception: Exception => {

@@ -15,7 +15,7 @@ object StockSearch extends Controller {
   def search(symbol: String) = Action.async { request =>
     Future {
       //Global.getUser(request)
-      val duration = Duration(20, SECONDS)
+      val duration = Duration(2, SECONDS)
       implicit val timeout: Timeout = new Timeout(duration)
 
       val stockSentiment: Future[JsValue] = StockSentiment.getForServer(symbol)
@@ -42,7 +42,11 @@ object StockSearch extends Controller {
       val json: JsValue = JsObject(Seq(
         "symbol" -> JsString(symbol),
         "stock_summary" -> stockSummary,
-        "stock_sentiment" ->  Await.result(stockSentiment, timeout.duration)
+        try {
+          "stock_sentiment" -> Await.result(stockSentiment, timeout.duration)
+        } catch {
+          case exception: Exception => "stock_sentiment" -> StockSentiment.defaultSentimentJson()
+        }
       ))
 
       Ok(json).withHeaders(

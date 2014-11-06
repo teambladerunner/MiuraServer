@@ -11,8 +11,9 @@ class UserPortfolio(user: String) {
   val userTradeHistory: Seq[Trade] = new UserDBModel().getUserTradeHistory(user)
 
   val portfolio: UserPortfolioSummary = {
+    val userPortfolioSummary = new PortfolioBuilder().buildPortfolio(userStocks, userTradeHistory)
     play.api.Logger.info("built portfolio for " + user)
-    new PortfolioBuilder().buildPortfolio(userStocks, userTradeHistory)
+    userPortfolioSummary
   }
 
   implicit val UserStockSummary = new Writes[UserStockSummary] {
@@ -32,7 +33,7 @@ class UserPortfolio(user: String) {
   val json: JsValue = JsObject(Seq(
     "user" -> JsString(user),
     "cash_balance" -> JsNumber(new UserDBModel().springJDBCQueries.selectUserByEmail(user).getCash),
-    "current_vale_total" -> JsNumber(portfolio.currentValue),
+    "current_value_total" -> JsNumber(portfolio.currentValue),
     "stocks" -> Json.toJson(portfolio.portfolio)
   ))
 

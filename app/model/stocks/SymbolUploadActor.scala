@@ -20,6 +20,7 @@ class SymbolUploadActor extends Actor {
   def uploadNasdaqQuotes(): Unit = {
     // get the csv file for NASDAQ symbols and latest prices
     try {
+      Logger.info("getting CSV from NASDAQ")
       val csvFile = Source.fromURL("http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nasdaq&render=download")
       // a csv file iterator with the first line dropped (headings), split into an array on "," symbol
       val linesIterator = csvFile.getLines().drop(1).map(_.split("\",\""))

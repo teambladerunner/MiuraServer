@@ -97,10 +97,24 @@ public class SpringJDBCQueries {
         }
     }
 
+    public Integer getUserTradeCount(String userId) {
+        return this.jdbcTemplate.query(
+                "select COUNT(TIMEPK) AS MYINTVALUE from MIURA.USERPORTFOLIO where USERID = ?",
+                new Object[]{userId},
+                new IntMapper()).get(0);
+    }
+
+    private static final class IntMapper implements RowMapper<Integer> {
+        public Integer mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Integer someInteger = rs.getInt("MYINTVALUE");
+            return someInteger;
+        }
+    }
+
     public UserDetail selectUserByEmail(String userEmail) {
         List<UserDetail> userDetails = this.jdbcTemplate.query(
                 "select USERIDPK, USERPASSWORD, FIRSTNAME ,LASTNAME, EMAIL, TWITTERHANDLE, FACEBOOKHANDLE, " +
-                        "GOOGLEHANDLE, LINKEDINHANDLE, LOCALEID, AVATARID, CASH " +
+                        "GOOGLEHANDLE, LINKEDINHANDLE, LOCALEID, AVATARID, CASH, LEVEL, JOINDATE " +
                         "from MIURA.GAMEUSER where EMAIL = ?",
                 new Object[]{userEmail},
                 new UserDetailMapper());
@@ -118,6 +132,8 @@ public class SpringJDBCQueries {
             userDetail.setLastName(rs.getString("LASTNAME"));
             userDetail.setLocaleId(rs.getString("LOCALEID"));
             userDetail.setCash(rs.getBigDecimal("CASH"));
+            userDetail.setLevel(rs.getInt("LEVEL"));
+            userDetail.setJoinDate(rs.getTimestamp("JOINDATE"));
             return userDetail;
         }
     }
