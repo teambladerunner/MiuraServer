@@ -28,8 +28,7 @@ class UserStateActor extends UntypedActor {
             sender() ! new Error("The email address is already reserved")
           }
         }
-      } else
-      if (message.isInstanceOf[UpdateUserRq]) {
+      } else if (message.isInstanceOf[UpdateUserRq]) {
         Logger.info("got user state update message " + message)
         val updateUserRq: UpdateUserRq = message.asInstanceOf[UpdateUserRq]
         val userDbModel: UserDBModel = new UserDBModel()
@@ -38,8 +37,7 @@ class UserStateActor extends UntypedActor {
           case None => sender() ! new Error("The email address does not exist")
           case _ => userDbModel.updateUser(UserDetail.mergeForUpdate(updateUserRq.userDetail, oldUserDetail.get))
         }
-      } else
-      if (message.isInstanceOf[NewTradeRq]) {
+      } else if (message.isInstanceOf[NewTradeRq]) {
         Logger.info("got user trade message " + message)
         val newTradeRq: NewTradeRq = message.asInstanceOf[NewTradeRq]
         val userDbModel: UserDBModel = new UserDBModel()
@@ -60,10 +58,34 @@ class UserStateActor extends UntypedActor {
             userDbModel.updateUser(newUserDetail)
           }
         }
-      } else
-
-      if (message.isInstanceOf[LevelUpRq]) {
-
+      } else if (message.isInstanceOf[LevelUpRq]) {
+        Logger.info("got level up message " + message)
+        val levelUpRq: LevelUpRq = message.asInstanceOf[LevelUpRq]
+        val userDbModel: UserDBModel = new UserDBModel()
+        val oldUserDetail: Option[UserDetail] = Option(userDbModel.springJDBCQueries.selectUserByEmail(levelUpRq.user))
+        oldUserDetail match {
+          case None => sender() ! new Error("The email address does not exist")
+          case _ => {
+            val newUserDetail = oldUserDetail.get
+            val level = newUserDetail.getLevel + 1
+            newUserDetail.setLevel(level)
+            userDbModel.updateUser(newUserDetail)
+          }
+        }
+      }
+      else if (message.isInstanceOf[NewPasswordRq]) {
+        Logger.info("got password change message " + message)
+        val newPasswordRq: NewPasswordRq = message.asInstanceOf[NewPasswordRq]
+        val userDbModel: UserDBModel = new UserDBModel()
+        val oldUserDetail: Option[UserDetail] = Option(userDbModel.springJDBCQueries.selectUserByEmail(newPasswordRq.user))
+        oldUserDetail match {
+          case None => sender() ! new Error("The email address does not exist")
+          case _ => {
+            val newUserDetail = oldUserDetail.get
+            newUserDetail.setPassword(newPasswordRq.password)
+            userDbModel.updateUser(newUserDetail)
+          }
+        }
       }
 
       sender() ! new Success()
@@ -83,6 +105,8 @@ case class UpdateUserRq(userDetail: UserDetail)
 case class NewTradeRq(trade: Trade)
 
 case class LevelUpRq(user: String)
+
+case class NewPasswordRq(user: String, password: String)
 
 case class Success()
 

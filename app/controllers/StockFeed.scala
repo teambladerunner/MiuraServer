@@ -53,18 +53,15 @@ object StockFeed extends Controller {
   //  }
 
   def sseSymbolFeed(symbol: String) = Action {
-//    implicit req => {
-//      val (out, wsOutChannel) = Concurrent.broadcast[JsValue]
-//      val userActor: ActorRef = Akka.system.actorOf(Props(new StockFeedPublishActorSSE(symbol, (out, wsOutChannel))))
-//      val watchStock: WatchStock = new WatchStock(symbol)
-//      StocksActor.stocksActor.tell(watchStock, userActor)
-//      //Ok.feed(out &> EventSource()).as("text/event-stream")
-//      play.api.Logger.info("setting feed channel for " + symbol)
-//      Ok.chunked(out &> EventSource()).as("text/event-stream")
-//    }
-
-    Ok("no feed")
-
+    implicit req => {
+      val (out, wsOutChannel) = Concurrent.broadcast[JsValue]
+      val userActor: ActorRef = Akka.system.actorOf(Props(new StockFeedPublishActorSSE(symbol, (out, wsOutChannel))))
+      val watchStock: WatchStock = new WatchStock(symbol)
+      StocksActor.stocksActor.tell(watchStock, userActor)
+      //Ok.feed(out &> EventSource()).as("text/event-stream")
+      play.api.Logger.info("setting feed channel for " + symbol)
+      Ok.chunked(out &> EventSource()).as("text/event-stream")
+    }
   }
 
   def getAllStocks = Action.async { request =>

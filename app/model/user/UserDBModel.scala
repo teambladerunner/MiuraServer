@@ -50,8 +50,8 @@ class UserDBModel extends DBFacade {
 
   def createUser(userDetail: UserDetail): Unit = {
     DB.withTransaction { implicit c =>
-      SQL("insert into MIURA.GAMEUSER(USERIDPK, USERPASSWORD, FIRSTNAME ,LASTNAME, EMAIL, TWITTERHANDLE, FACEBOOKHANDLE, GOOGLEHANDLE, LINKEDINHANDLE, LOCALEID, AVATARID, CASH, JOINDATE) " +
-        "values ({userIdPk}, {password}, {firstName}, {lastName}, {email}, {twitterHandle}, {facebookHandle}, {googleHandle}, {linkedinHandle}, {localeId}, {avatarId}, {cash}, {joinDate})").on(
+      SQL("insert into MIURA.GAMEUSER(USERIDPK, USERPASSWORD, FIRSTNAME ,LASTNAME, EMAIL, TWITTERHANDLE, FACEBOOKHANDLE, GOOGLEHANDLE, LINKEDINHANDLE, LOCALEID, AVATARID, CASH, LEVEL, JOINDATE) " +
+        "values ({userIdPk}, {password}, {firstName}, {lastName}, {email}, {twitterHandle}, {facebookHandle}, {googleHandle}, {linkedinHandle}, {localeId}, {avatarId}, {cash}, {level}, {joinDate})").on(
           "userIdPk" -> Platform.currentTime.toString,
           "password" -> userDetail.getPassword,
           "firstName" -> userDetail.getFirstName,
@@ -63,9 +63,9 @@ class UserDBModel extends DBFacade {
           "linkedinHandle" -> "",
           "localeId" -> "",
           "avatarId" -> "",
-          "cash" -> userDetail.getCash,
+          "cash" -> new BigDecimal("25000.00"),//userDetail.getCash,
           "level" -> userDetail.getLevel,
-      "joinDate" -> userDetail.getJoinDate
+          "joinDate" -> userDetail.getJoinDate
         ).executeUpdate()
     }
   }

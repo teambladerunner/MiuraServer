@@ -37,23 +37,4 @@ class GoogleAPIStockQuote extends StockQuote {
     }
   }
 
-  //  implicit val formats = DefaultFormats
-  //
-  //  def getFromGoogle(symbol:String, lastPrice: Double): Double = {
-  //    val googleUrl = "http://www.google.com/finance/info?q=NASDAQ:" + symbol
-  //    val page = url(googleUrl)
-  //    val response = Http(page OK dispatch.as.json4s.Json)
-  //    response onComplete {
-  //      case Success(json) => {
-  //        val currentPrice =  (json \ "l").extract[Double]
-  //        return currentPrice
-  //      }
-  //      case Failure(error) => {
-  //        Logger.info(error.getLocalizedMessage)
-  //        return lastPrice
-  //      }
-  //    }
-  //    return lastPrice
-  //  }
-
 }

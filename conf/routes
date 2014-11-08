@@ -25,6 +25,7 @@ POST    /user                           controllers.Users.newUser()
 PUT     /user                           controllers.Users.updateSettings()
 POST    /user/portfolio/trades          controllers.Users.newTrade()
 POST    /user/profile/level             controllers.Users.levelUp()
+POST    /user/profile/password          controllers.Users.resetPassword()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file                   controllers.Assets.at(path="/public", file)
