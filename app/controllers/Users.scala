@@ -102,7 +102,7 @@ object Users extends play.api.mvc.Controller {
       val future = SystemSupervisor.supervisor ask new NewUserRq(userDetail)
       val result = Await.result(future, timeout.duration)
       result match {
-        case Success() => Ok(jsonify("true")).withHeaders(
+        case Success() => Ok(JsObject(Seq("authid" -> JsString(userDetail.getEmail + "535510N" + new NCrypt().hash(userDetail.getEmail))))).withHeaders(
           HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*"
         )
         case Error(_) => BadRequest(jsonify(result.asInstanceOf[Error].description))
@@ -151,7 +151,15 @@ object Users extends play.api.mvc.Controller {
             HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*"
           )
           case Error(_) => BadRequest(jsonify(result.asInstanceOf[Error].description))
-          case s: String => BadRequest(jsonify("true"))
+          case s: String => {
+            if (s.equals("ok")) {
+              Ok(jsonify("true"))
+            }
+            else {
+              BadRequest(jsonify(s))
+            }
+          }
+          case ex: java.lang.Error => BadRequest(jsonify(ex.getLocalizedMessage))
           case _ => BadRequest(jsonify("false"))
         }
       }

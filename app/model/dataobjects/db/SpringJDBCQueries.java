@@ -23,7 +23,7 @@ public class SpringJDBCQueries {
                 "select SYMBOL, SUM(UNITS) as VALUE " +
                         "from MIURA.USERPORTFOLIO US1 " +
                         "group by USERID, SYMBOL , PENDING " +
-                        "having USERID = ? AND PENDING = ? AND SUM(UNITS) > 0",
+                        "having USERID = ? AND PENDING = ? AND SUM(UNITS) > 0 ",
                 new Object[]{userId, "N"},
                 new UserStockMapper());
         return userStocks;
@@ -78,9 +78,9 @@ public class SpringJDBCQueries {
 
     public List<Trade> getPendingUserSells(String symbol, Double rate, boolean desc) {
         List<Trade> trades = this.jdbcTemplate.query(
-                "select TIMEPK, QUOTEID, SYMBOL, UNITS, PRICE, BUYSELL, PENDING " +
+                "select TIMEPK, QUOTEID, SYMBOL, UNITS, PRICE, BUYSELL, PENDING, USERID " +
                         "from MIURA.USERPORTFOLIO " +
-                        "where PENDING = ? AND BUYSELL = ? AND SYMBOL = ? AND PRICE <= ?" +
+                        "where PENDING = ? AND BUYSELL = ? AND SYMBOL = ? AND PRICE <= ? " +
                         "order by TIMEPK " + (desc ? "desc" : "asc"),
                 new Object[]{"Y", "S", symbol, rate},
                 new TradeMapper());
@@ -89,9 +89,9 @@ public class SpringJDBCQueries {
 
     public List<Trade> getPendingUserBuys(String symbol, Double rate, boolean desc) {
         List<Trade> trades = this.jdbcTemplate.query(
-                "select TIMEPK, QUOTEID, SYMBOL, USERID, UNITS, PRICE, BUYSELL, PENDING " +
+                "select TIMEPK, QUOTEID, SYMBOL, USERID, UNITS, PRICE, BUYSELL, PENDING, USERID " +
                         "from MIURA.USERPORTFOLIO " +
-                        "where PENDING = ? AND BUYSELL = ? AND SYMBOL = ? AND PRICE >= ?" +
+                        "where PENDING = ? AND BUYSELL = ? AND SYMBOL = ? AND PRICE >= ? " +
                         "order by TIMEPK " + (desc ? "desc" : "asc"),
                 new Object[]{"Y", "B", symbol, rate},
                 new TradeMapper());
