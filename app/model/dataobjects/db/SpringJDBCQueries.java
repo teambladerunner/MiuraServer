@@ -33,7 +33,7 @@ public class SpringJDBCQueries {
         List<UserStock> userStocks = this.jdbcTemplate.query(
                 "select SYMBOL, SUM(UNITS) as VALUE " +
                         "from MIURA.USERPORTFOLIO US1 " +
-                        "group by USERID, SYMBOL " +
+                        "group by USERID, SYMBOL , PENDING " +
                         "having USERID = ? AND SYMBOL = ? AND PENDING = ? ",
                 new Object[]{userId, symbol, "N"},
                 new UserStockMapper());
