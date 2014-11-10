@@ -4,7 +4,8 @@ import java.math.BigDecimal
 import java.sql.Timestamp
 
 import akka.actor.UntypedActor
-import model.dataobjects.{Trade, UserDetail}
+import model.dataobjects.UserDetail
+import model.user.hash.NCrypt
 import play.api.Logger
 
 class UserStateActor extends UntypedActor {
@@ -15,10 +16,13 @@ class UserStateActor extends UntypedActor {
       if (message.isInstanceOf[NewUserRq]) {
         val newUserRq = message.asInstanceOf[NewUserRq]
         val userDbModel: UserDBModel = new UserDBModel()
-        val user: Option[UserDetail] = Option(userDbModel.springJDBCQueries.selectUserByEmail(newUserRq.userDetail.getEmail))
+        val user: Option[UserDetail] = Option(userDbModel.view.selectUserByEmail(newUserRq.userDetail.getEmail))
         user match {
           case None => {
             val userDetail = newUserRq.userDetail
+            val nCrypt = new NCrypt
+            userDetail.setPassword(nCrypt.hash(userDetail.getPassword))
+            userDetail.setEmail(userDetail.getEmail)
             userDetail.setLevel(1)
             userDetail.setCash(new BigDecimal("25000.00"))
             userDetail.setJoinDate(new Timestamp(System.currentTimeMillis()))
@@ -32,37 +36,45 @@ class UserStateActor extends UntypedActor {
         Logger.info("got user state update message " + message)
         val updateUserRq: UpdateUserRq = message.asInstanceOf[UpdateUserRq]
         val userDbModel: UserDBModel = new UserDBModel()
-        val oldUserDetail: Option[UserDetail] = Option(userDbModel.springJDBCQueries.selectUserByEmail(updateUserRq.userDetail.getEmail))
-        oldUserDetail match {
-          case None => sender() ! new Error("The email address does not exist")
-          case _ => userDbModel.updateUser(UserDetail.mergeForUpdate(updateUserRq.userDetail, oldUserDetail.get))
-        }
-      } else if (message.isInstanceOf[NewTradeRq]) {
-        Logger.info("got user trade message " + message)
-        val newTradeRq: NewTradeRq = message.asInstanceOf[NewTradeRq]
-        val userDbModel: UserDBModel = new UserDBModel()
-        val oldUserDetail: Option[UserDetail] = Option(userDbModel.springJDBCQueries.selectUserByEmail(newTradeRq.trade.getUser))
+        val oldUserDetail: Option[UserDetail] = Option(userDbModel.view.selectUserByEmail(updateUserRq.userDetail.getEmail))
         oldUserDetail match {
           case None => sender() ! new Error("The email address does not exist")
           case _ => {
-            val level = ((userDbModel.springJDBCQueries.getUserTradeCount(newTradeRq.trade.getUser) + 1) / 5) + 1
-            userDbModel.createTrade(newTradeRq.trade)
-            val newUserDetail = oldUserDetail.get
-            val cashTraded = newTradeRq.trade.getRate * newTradeRq.trade.getUnits
-            if (newTradeRq.trade.getBuySell.equalsIgnoreCase("B")) {
-              newUserDetail.setCash(newUserDetail.getCash.subtract(new BigDecimal(cashTraded.toString)))
-            } else {
-              newUserDetail.setCash(newUserDetail.getCash.add(new BigDecimal(cashTraded.toString)))
+            val newUserDetail = UserDetail.mergeForUpdate(updateUserRq.userDetail, oldUserDetail.get)
+            if (updateUserRq.userDetail.getPassword != null && updateUserRq.userDetail.getPassword.length > 0) {
+              newUserDetail.setPassword(new NCrypt().hash(updateUserRq.userDetail.getPassword))
             }
-            newUserDetail.setLevel(level)
             userDbModel.updateUser(newUserDetail)
           }
         }
-      } else if (message.isInstanceOf[LevelUpRq]) {
+      }
+      //      } else if (message.isInstanceOf[NewTradeRq]) {
+      //        Logger.info("got user trade message " + message)
+      //        val newTradeRq: NewTradeRq = message.asInstanceOf[NewTradeRq]
+      //        val userDbModel: UserDBModel = new UserDBModel()
+      //        val oldUserDetail: Option[UserDetail] = Option(userDbModel.springJDBCQueries.selectUserByEmail(newTradeRq.trade.getUser))
+      //        oldUserDetail match {
+      //          case None => sender() ! new Error("The email address does not exist")
+      //          case _ => {
+      //            val level = ((userDbModel.springJDBCQueries.getUserTradeCount(newTradeRq.trade.getUser) + 1) / 5) + 1
+      //            userDbModel.createTrade(newTradeRq.trade)
+      //            val newUserDetail = oldUserDetail.get
+      //            val cashTraded = newTradeRq.trade.getRate * newTradeRq.trade.getUnits
+      //            if (newTradeRq.trade.getBuySell.equalsIgnoreCase("B")) {
+      //              newUserDetail.setCash(newUserDetail.getCash.subtract(new BigDecimal(cashTraded.toString)))
+      //            } else {
+      //              newUserDetail.setCash(newUserDetail.getCash.add(new BigDecimal(cashTraded.toString)))
+      //            }
+      //            newUserDetail.setLevel(level)
+      //            userDbModel.updateUser(newUserDetail)
+      //          }
+      //        }
+      //      }
+      else if (message.isInstanceOf[LevelUpRq]) {
         Logger.info("got level up message " + message)
         val levelUpRq: LevelUpRq = message.asInstanceOf[LevelUpRq]
         val userDbModel: UserDBModel = new UserDBModel()
-        val oldUserDetail: Option[UserDetail] = Option(userDbModel.springJDBCQueries.selectUserByEmail(levelUpRq.user))
+        val oldUserDetail: Option[UserDetail] = Option(userDbModel.view.selectUserByEmail(levelUpRq.user))
         oldUserDetail match {
           case None => sender() ! new Error("The email address does not exist")
           case _ => {
@@ -77,12 +89,12 @@ class UserStateActor extends UntypedActor {
         Logger.info("got password change message " + message)
         val newPasswordRq: NewPasswordRq = message.asInstanceOf[NewPasswordRq]
         val userDbModel: UserDBModel = new UserDBModel()
-        val oldUserDetail: Option[UserDetail] = Option(userDbModel.springJDBCQueries.selectUserByEmail(newPasswordRq.user))
+        val oldUserDetail: Option[UserDetail] = Option(userDbModel.view.selectUserByEmail(newPasswordRq.user))
         oldUserDetail match {
           case None => sender() ! new Error("The email address does not exist")
           case _ => {
             val newUserDetail = oldUserDetail.get
-            newUserDetail.setPassword(newPasswordRq.password)
+            newUserDetail.setPassword(new NCrypt().hash(newPasswordRq.password))
             userDbModel.updateUser(newUserDetail)
           }
         }
@@ -102,7 +114,7 @@ case class NewUserRq(userDetail: UserDetail)
 
 case class UpdateUserRq(userDetail: UserDetail)
 
-case class NewTradeRq(trade: Trade)
+//case class NewTradeRq(trade: Trade)
 
 case class LevelUpRq(user: String)
 

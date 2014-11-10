@@ -6,7 +6,9 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{ActorSystem, Cancellable, Props}
 import com.github.nscala_time.time.Imports._
 import controllers.filters.{AccessLog, CORSFilter, LoggingFilter}
+import model.SystemSupervisor
 import model.stocks._
+import model.user.hash.DCrypt
 import model.user.{DemoUser, InMemoryUserService, MyEventListener}
 import org.springframework.context.support.ClassPathXmlApplicationContext
 import play.api.mvc.{Cookie, Request, WithFilters}
@@ -14,6 +16,7 @@ import play.api.{Logger, _}
 import securesocial.core.RuntimeEnvironment
 import securesocial.core.providers.GoogleProvider
 
+import scala.collection.JavaConversions._
 import scala.collection.immutable.ListMap
 import scala.compat.Platform
 import scala.concurrent.duration.Duration
@@ -23,8 +26,6 @@ object Global extends WithFilters(AccessLog, LoggingFilter, CORSFilter) with Glo
   //object Global extends GlobalSettings {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-
-  val stockQuote: StockQuote = new GoogleAPIStockQuote
 
   val system = ActorSystem()
 
@@ -62,6 +63,10 @@ object Global extends WithFilters(AccessLog, LoggingFilter, CORSFilter) with Glo
         Upload)
     scheduledItems = scheduledItems :+ scheduled
 
+    val pendingSymbols = new StocksDBModel().view.getPendingSymbols()
+    for (pendingSymbol <- pendingSymbols) {
+      SystemSupervisor.supervisor ! (new StartWatchingTrades(pendingSymbol))
+    }
   }
 
   override def onStop(app: play.api.Application): Unit = {
@@ -103,8 +108,25 @@ object Global extends WithFilters(AccessLog, LoggingFilter, CORSFilter) with Glo
     val headerValue: Option[String] = request.headers.get("authid")
     headerValue match {
       case None => throw new Exception("You are not logged in")
-      case _ => headerValue.get
+      case _ => validateUser(headerValue)
     }
+  }
+
+  def validateUser(someOption: Option[String]): String = {
+    someOption match {
+      case None => ""
+      case _ => {
+        val components = someOption.get.split("535510N")
+        if (components.size > 1) {
+          val email = components(0)
+          val hash = components(1)
+          if (new DCrypt().validatePassword(email, hash)) {
+            return email
+          }
+        }
+      }
+    }
+    throw new Exception("invalid user id")
   }
 
   /**

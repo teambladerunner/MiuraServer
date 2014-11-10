@@ -3,6 +3,8 @@ package model.stocks
 import java.math
 
 import akka.actor.UntypedActor
+import model.SystemSupervisor
+
 //import model.stocks.{StockHistory, StockUpdate, StocksActor, WatchStock}
 //import play.api.Logger
 import play.api.libs.iteratee.{Concurrent, Enumerator}
@@ -17,7 +19,7 @@ import scala.math.BigDecimal
  */
 class StockFeedPublishActorSSE(symbol: String, sseChannel: (Enumerator[JsValue], Concurrent.Channel[JsValue])) extends UntypedActor {
 
-  StocksActor.stocksActor.tell(new WatchStock(symbol), getSelf)
+  SystemSupervisor.supervisor.tell(new WatchStock(symbol), getSelf)
 
   @scala.throws[Exception](classOf[Exception])
   override def onReceive(message: Any): Unit = {

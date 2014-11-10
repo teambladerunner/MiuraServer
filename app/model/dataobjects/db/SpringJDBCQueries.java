@@ -22,16 +22,27 @@ public class SpringJDBCQueries {
         List<UserStock> userStocks = this.jdbcTemplate.query(
                 "select SYMBOL, SUM(UNITS) as VALUE " +
                         "from MIURA.USERPORTFOLIO US1 " +
+                        "group by USERID, SYMBOL , PENDING " +
+                        "having USERID = ? AND PENDING = ? AND SUM(UNITS) > 0",
+                new Object[]{userId, "N"},
+                new UserStockMapper());
+        return userStocks;
+    }
+
+    public List<UserStock> getUserStocksAvailable(String userId, String symbol) {
+        List<UserStock> userStocks = this.jdbcTemplate.query(
+                "select SYMBOL, SUM(UNITS) as VALUE " +
+                        "from MIURA.USERPORTFOLIO US1 " +
                         "group by USERID, SYMBOL " +
-                        "having USERID = ? AND SUM(UNITS) > 0",
-                new Object[]{userId},
+                        "having USERID = ? AND SYMBOL = ? AND PENDING = ? ",
+                new Object[]{userId, symbol, "N"},
                 new UserStockMapper());
         return userStocks;
     }
 
     public List<UserStock> getAllStocks() {
         List<UserStock> userStocks = this.jdbcTemplate.query(
-                "select distinct(SYMBOL) from MIURA.NASDAQUPDATE",
+                "select distinct(SYMBOL), 0 VALUE from MIURA.NASDAQUPDATE",
                 new Object[]{},
                 new UserStockMapper());
         return userStocks;
@@ -60,14 +71,36 @@ public class SpringJDBCQueries {
                         "from MIURA.USERPORTFOLIO " +
                         "where USERID = ? AND SYMBOL = ? " +
                         "order by TIMEPK " + (desc ? "desc" : "asc"),
-                new Object[]{userId},
+                new Object[]{userId, symbol},
+                new TradeMapper());
+        return trades;
+    }
+
+    public List<Trade> getPendingUserSells(String symbol, Double rate, boolean desc) {
+        List<Trade> trades = this.jdbcTemplate.query(
+                "select TIMEPK, QUOTEID, SYMBOL, UNITS, PRICE, BUYSELL, PENDING " +
+                        "from MIURA.USERPORTFOLIO " +
+                        "where PENDING = ? AND BUYSELL = ? AND SYMBOL = ? AND PRICE <= ?" +
+                        "order by TIMEPK " + (desc ? "desc" : "asc"),
+                new Object[]{"Y", "S", symbol, rate},
+                new TradeMapper());
+        return trades;
+    }
+
+    public List<Trade> getPendingUserBuys(String symbol, Double rate, boolean desc) {
+        List<Trade> trades = this.jdbcTemplate.query(
+                "select TIMEPK, QUOTEID, SYMBOL, USERID, UNITS, PRICE, BUYSELL, PENDING " +
+                        "from MIURA.USERPORTFOLIO " +
+                        "where PENDING = ? AND BUYSELL = ? AND SYMBOL = ? AND PRICE >= ?" +
+                        "order by TIMEPK " + (desc ? "desc" : "asc"),
+                new Object[]{"Y", "B", symbol, rate},
                 new TradeMapper());
         return trades;
     }
 
     public List<Trade> getUserTradeHistory(String userId) {
         List<Trade> trades = this.jdbcTemplate.query(
-                "select TIMEPK, QUOTEID, SYMBOL, UNITS, PRICE, BUYSELL, USERID " +
+                "select TIMEPK, QUOTEID, SYMBOL, UNITS, PRICE, BUYSELL, USERID , PENDING " +
                         "from MIURA.USERPORTFOLIO " +
                         "where USERID = ? " +
                         "order by TIMEPK desc",
@@ -78,7 +111,7 @@ public class SpringJDBCQueries {
 
     private static final class TradeMapper implements RowMapper<Trade> {
         public Trade mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Trade trade = new Trade(new Timestamp(rs.getLong("TIMEPK")), rs.getString("USERID"), rs.getString("SYMBOL"), rs.getFloat("UNITS"), rs.getFloat("PRICE"), rs.getString("BUYSELL"));
+            Trade trade = new Trade(new Timestamp(rs.getLong("TIMEPK")), rs.getString("USERID"), rs.getString("SYMBOL"), rs.getFloat("UNITS"), rs.getFloat("PRICE"), rs.getString("BUYSELL"), rs.getString("PENDING"));
             return trade;
         }
     }
@@ -156,6 +189,50 @@ public class SpringJDBCQueries {
             stockInfo.setIndustry(rs.getString("INDUSTRY"));
             stockInfo.setSector(rs.getString("SECTOR"));
             return stockInfo;
+        }
+    }
+
+    public Double getAvailableUnits(String symbol) {
+        List<Double> availableUnits = this.jdbcTemplate.query(
+                "select SYMBOL, MARKETUNITS " +
+                        "from MIURA.SYMBOLUNITS where SYMBOL = ? ",
+                new Object[]{symbol},
+                new DoubleMapper("MARKETUNITS"));
+        return availableUnits.size() > 0 ? availableUnits.get(0) : -1.0;
+    }
+
+    private static final class DoubleMapper implements RowMapper<Double> {
+
+        private final String columnName;
+
+        public DoubleMapper(String columnName) {
+            this.columnName = columnName;
+        }
+
+        public Double mapRow(ResultSet rs, int rowNum) throws SQLException {
+            return rs.getDouble(columnName);
+        }
+    }
+
+    public List<String> getPendingSymbols() {
+        List<String> pendingSymbols = this.jdbcTemplate.query(
+                "select DISTINCT(SYMBOL) AS PENDINGSYMBOLS " +
+                        "from MIURA.USERPORTFOLIO where PENDING = ? ",
+                new Object[]{"Y"},
+                new StringMapper("PENDINGSYMBOLS"));
+        return pendingSymbols;
+    }
+
+    private static final class StringMapper implements RowMapper<String> {
+
+        private final String columnName;
+
+        public StringMapper(String columnName) {
+            this.columnName = columnName;
+        }
+
+        public String mapRow(ResultSet rs, int rowNum) throws SQLException {
+            return rs.getString(columnName);
         }
     }
 

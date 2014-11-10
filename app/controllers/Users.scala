@@ -1,15 +1,16 @@
 package controllers
 
-import akka.actor.{ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 import controllers.Global._
+import model.SystemSupervisor
 import model.dataobjects.{Trade, UserDetail}
+import model.stocks.TradeStock
 import model.user._
+import model.user.hash.{DCrypt, NCrypt}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContentAsJson}
-import play.libs.Akka
 import play.mvc.Http.HeaderNames
 
 import scala.concurrent.duration._
@@ -31,12 +32,10 @@ object Users extends play.api.mvc.Controller {
       }
       Logger.info(requestBody)
       val userDetail = UserDetail.buildUserDetailFromJSON(requestBody)
-      Logger.info(userDetail.getEmail + " " + userDetail.getPassword)
-      val password = userDetail.getPassword
-      val user = new UserDBModel().springJDBCQueries.selectUserByEmail(userDetail.getEmail)
-      if (user != null && user.getPassword.equals(password)) {
-        Logger.info("wtf 3")
-        Ok(JsObject(Seq("authid" -> JsString(user.getEmail))))
+      //hash the email and check
+      val userDBModel = new UserDBModel().view.selectUserByEmail(userDetail.getEmail)
+      if (userDBModel != null && new DCrypt().validatePassword(userDetail.getPassword, userDBModel.getPassword)) {
+        Ok(JsObject(Seq("authid" -> JsString(userDBModel.getEmail + "535510N" + new NCrypt().hash(userDBModel.getEmail)))))
       } else {
         BadRequest(jsonify("invalid user id"))
       }
@@ -46,11 +45,28 @@ object Users extends play.api.mvc.Controller {
   def getUserPersonalInfo = Action.async { request =>
     Future {
       val userId = getUser(request)
-      val headerValue: Option[String] = request.headers.get("authid")
-      Ok(new UserDBModel().springJDBCQueries.selectUserByEmail(userId).toKVJSON)
+      if (userId.length > 0) {
+        Ok(new UserDBModel().view.selectUserByEmail(userId).toKVJSON)
+      } else {
+        BadRequest(jsonify("invalid user id"))
+      }
     }
   }
 
+  def getUserPortfolio = Action.async { request =>
+    val futurePortfolio = Future {
+      val userId = getUser(request)
+      Logger.info("return portfolio for " + userId)
+      new UserPortfolio(userId).asJSON
+    }
+    val futurePortfolioTimeout = play.api.libs.concurrent.Promise.timeout("Oops", 30.second)
+    Future.firstCompletedOf(Seq(futurePortfolio, futurePortfolioTimeout)).map {
+      case s: String => Ok(s)
+      case _ => BadRequest(jsonify("false"))
+    }
+  }
+
+  //ASYCNC
   //  def getUserPortfolio = Action.async { request =>
   //    Future {
   //      val userId = getUser(request)
@@ -59,11 +75,12 @@ object Users extends play.api.mvc.Controller {
   //    }
   //  }
 
-  def getUserPortfolio = Action { request =>
-    val userId = getUser(request)
-    Logger.info("return portfolio for " + userId)
-    Ok(new UserPortfolio(userId).asJSON)
-  }
+  //SYCNC
+  //  def getUserPortfolio = Action { request =>
+  //    val userId = getUser(request)
+  //    Logger.info("return portfolio for " + userId)
+  //    Ok(new UserPortfolio(userId).asJSON)
+  //  }
 
   def getUserTradeHistory() = Action.async { request =>
     Future {
@@ -72,7 +89,7 @@ object Users extends play.api.mvc.Controller {
     }
   }
 
-  val userStateActor: ActorRef = Akka.system.actorOf(Props.create(classOf[UserStateActor]), "userStateActor")
+  //val userStateActor: ActorRef = Akka.system.actorOf(Props.create(classOf[UserStateActor]), "userStateActor")
 
   def newUser = Action.async(parse.json) { request =>
     Future {
@@ -82,7 +99,7 @@ object Users extends play.api.mvc.Controller {
       val duration = Duration(5, SECONDS)
       implicit val timeout: Timeout = new Timeout(duration)
       //let the user state actor update the database and  wait for its result as a future
-      val future = userStateActor ask new NewUserRq(userDetail)
+      val future = SystemSupervisor.supervisor ask new NewUserRq(userDetail)
       val result = Await.result(future, timeout.duration)
       result match {
         case Success() => Ok(jsonify("true")).withHeaders(
@@ -97,14 +114,14 @@ object Users extends play.api.mvc.Controller {
   def updateSettings = Action.async(parse.json) { request =>
     Future {
       val userId = Global.getUser(request)
-      val email = new UserDBModel().springJDBCQueries.selectUserByEmail(userId).getEmail
+      val email = new UserDBModel().view.selectUserByEmail(userId).getEmail
       val userDetail = UserDetail.buildUserDetailFromJSON(request.body.toString())
       userDetail.setEmail(email)
 
       val duration = Duration(5, SECONDS)
       implicit val timeout: Timeout = new Timeout(duration)
       //let the user state actor update the database and  wait for its result as a future
-      val future = userStateActor ask new UpdateUserRq(userDetail)
+      val future = SystemSupervisor.supervisor ask new UpdateUserRq(userDetail)
       val result = Await.result(future, timeout.duration)
       result match {
         case Success() => Ok(jsonify("true")).withHeaders(
@@ -123,17 +140,18 @@ object Users extends play.api.mvc.Controller {
         Logger.info(request.body.toString())
         val user = getUser(request)
         val trade: Trade = Trade.buildFromJSON(user, request.body.toString())
-
         val duration = Duration(5, SECONDS)
         implicit val timeout: Timeout = new Timeout(duration)
+
         //let the user state actor update the database and  wait for its result as a future
-        val future = userStateActor ask new NewTradeRq(trade)
+        val future = SystemSupervisor.supervisor ask new TradeStock(trade)
         val result = Await.result(future, timeout.duration)
         result match {
           case Success() => Ok(jsonify(request.body.toString())).withHeaders(
             HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*"
           )
           case Error(_) => BadRequest(jsonify(result.asInstanceOf[Error].description))
+          case s: String => BadRequest(jsonify("true"))
           case _ => BadRequest(jsonify("false"))
         }
       }
@@ -148,7 +166,7 @@ object Users extends play.api.mvc.Controller {
         val duration = Duration(5, SECONDS)
         implicit val timeout: Timeout = new Timeout(duration)
         //let the user state actor update the database and  wait for its result as a future
-        val future = userStateActor ask new LevelUpRq(user)
+        val future = SystemSupervisor.supervisor ask new LevelUpRq(user)
         val result = Await.result(future, timeout.duration)
         result match {
           case Success() => Ok(jsonify("true")).withHeaders(
@@ -170,7 +188,7 @@ object Users extends play.api.mvc.Controller {
         val duration = Duration(5, SECONDS)
         implicit val timeout: Timeout = new Timeout(duration)
         //let the user state actor update the database and  wait for its result as a future
-        val future = userStateActor ask new NewPasswordRq(user, userDetail.getPassword)
+        val future = SystemSupervisor.supervisor ask new NewPasswordRq(user, userDetail.getPassword)
         val result = Await.result(future, timeout.duration)
         result match {
           case Success() => Ok(jsonify("true")).withHeaders(

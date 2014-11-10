@@ -3,13 +3,13 @@ package model.user
 import java.math
 
 import akka.actor.UntypedActor
+import model.SystemSupervisor
 import model.dataobjects.UserStock
-import model.stocks.{StockHistory, StockUpdate, StocksActor, WatchStock}
-import play.api.Logger
+import model.stocks.{StockHistory, StockUpdate, WatchStock}
 import play.api.libs.iteratee.{Concurrent, Enumerator}
 import play.api.libs.json._
-import collection.JavaConversions._
 
+import scala.collection.JavaConversions._
 import scala.math.BigDecimal
 
 /**
@@ -21,7 +21,7 @@ class UserActorSSE(user: String, sseChannel: (Enumerator[JsValue], Concurrent.Ch
   val defaultStocks: Seq[UserStock] = new UserDBModel().getUserStocks(user)
 
   for (userStock <- defaultStocks) {
-    StocksActor.stocksActor.tell(new WatchStock(userStock.getSymbol), getSelf)
+    SystemSupervisor.supervisor.tell(new WatchStock(userStock.getSymbol), getSelf)
   }
 
   @scala.throws[Exception](classOf[Exception])

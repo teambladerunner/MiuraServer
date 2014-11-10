@@ -13,9 +13,9 @@ import scala.compat.Platform
 
 class UserDBModel extends DBFacade {
 
-  def getUserStocks(userId: String): Seq[UserStock] = springJDBCQueries.getUserStocks(userId)
+  def getUserStocks(userId: String): Seq[UserStock] = view.getUserStocks(userId)
 
-  def getUserTradeHistory(userId: String): Seq[Trade] = springJDBCQueries.getUserTradeHistory(userId)
+  def getUserTradeHistory(userId: String): Seq[Trade] = view.getUserTradeHistory(userId)
 
   def getUserStocksAsJson(userId: String): JsObject = {
     var jsObjects: List[JsObject] = List()
@@ -39,7 +39,8 @@ class UserDBModel extends DBFacade {
         "stockSymbol" -> trade.getSymbol,
         "units" -> trade.getUnits.toString,
         "rate" -> trade.getRate.toString,
-        "buySell" -> trade.getBuySell
+        "buySell" -> trade.getBuySell,
+        "pending" -> trade.getPending
       )
     }
     return Json.obj(
@@ -63,24 +64,25 @@ class UserDBModel extends DBFacade {
           "linkedinHandle" -> "",
           "localeId" -> "",
           "avatarId" -> "",
-          "cash" -> new BigDecimal("25000.00"),//userDetail.getCash,
+          "cash" -> new BigDecimal("25000.00"), //userDetail.getCash,
           "level" -> userDetail.getLevel,
           "joinDate" -> userDetail.getJoinDate
         ).executeUpdate()
     }
   }
 
-  def createTrade(trade: Trade): Unit = {
+  def createTrade(trade: Trade, units: Float): Unit = {
     DB.withTransaction { implicit c =>
-      SQL("INSERT INTO MIURA.USERPORTFOLIO(  TIMEPK,  QUOTEID,  SYMBOL,  UNITS,  PRICE,  BUYSELL,  USERID) " +
-        "VALUES(  {timepk},  {quoteid},  {symbol},  {units},  {rate},  {buysell},  {userid})").on(
+      SQL("INSERT INTO MIURA.USERPORTFOLIO(  TIMEPK,  QUOTEID,  SYMBOL,  UNITS,  PRICE,  BUYSELL,  USERID, PENDING) " +
+        "VALUES(  {timepk},  {quoteid},  {symbol},  {units},  {rate},  {buysell},  {userid}, {pending})").on(
           "timepk" -> Platform.currentTime.toString,
           "quoteid" -> Platform.currentTime.toString,
           "symbol" -> trade.getSymbol,
-          "units" -> trade.getUnits,
+          "units" -> units, //trade.getUnits,
           "rate" -> trade.getRate,
           "buysell" -> trade.getBuySell,
-          "userid" -> trade.getUser
+          "userid" -> trade.getUser,
+          "pending" -> "Y"
         ).executeUpdate()
     }
   }
@@ -91,7 +93,7 @@ class UserDBModel extends DBFacade {
       DB.withTransaction { implicit c =>
         SQL("update MIURA.GAMEUSER set USERIDPK = {userIdPk}, USERPASSWORD = {password}, FIRSTNAME = {firstName}," +
           "LASTNAME = {lastName}, EMAIL = {email}, TWITTERHANDLE = {twitterHandle}, FACEBOOKHANDLE = {facebookHandle}, " +
-          "GOOGLEHANDLE = {googleHandle}, LINKEDINHANDLE = {linkedinHandle}, LOCALEID = {localeId}, AVATARID = {avatarId}, CASH = {cash} " +
+          "GOOGLEHANDLE = {googleHandle}, LINKEDINHANDLE = {linkedinHandle}, LOCALEID = {localeId}, AVATARID = {avatarId}, CASH = {cash}, LEVEL = {level} " +
           " where USERIDPK = {userIdPk}").on(
             "userIdPk" -> userDetail.getPkid,
             "password" -> userDetail.getPassword,
@@ -104,7 +106,8 @@ class UserDBModel extends DBFacade {
             "linkedinHandle" -> "",
             "localeId" -> userDetail.getLocaleId,
             "avatarId" -> userDetail.getAvatarID,
-            "cash" -> userDetail.getCash
+            "cash" -> userDetail.getCash,
+            "level" -> userDetail.getLevel
           ).executeUpdate()
       }
     } catch {

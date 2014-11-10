@@ -1,8 +1,13 @@
 package model.stocks
 
+import akka.pattern.ask
+import akka.util.Timeout
+import model.SystemSupervisor
 import model.dataobjects.{JSONify, Trade, UserStock}
 
 import scala.collection._
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class PortfolioBuilder {
 
@@ -14,11 +19,17 @@ class PortfolioBuilder {
     var portfolio: List[UserStockSummary] = List()
 
     var totalCurrentMarketPrice: Double = 0.0
+    var totalValue = 0.0
 
     //userStocks.par.foreach(userStock => {
     userStocks.foreach(userStock => {
+      val duration = Duration(5, SECONDS)
+      implicit val timeout: Timeout = new Timeout(duration)
+
       val symbol = userStock.getSymbol
-      val currentMarketPrice = new GoogleAPIStockQuote().newPrice(symbol, 0.0).toFloat
+      //val currentMarketPrice = new GoogleAPIStockQuote().newPrice(symbol, 0.0).toFloat
+      val marketPriceFuture = SystemSupervisor.supervisor ask new GetQuote(symbol)
+      val currentMarketPrice = Await.result(marketPriceFuture, timeout.duration).asInstanceOf[Double].toFloat
       //val tradeList: Option[parallel.ParSeq[Trade]] = tradesMap.get(symbol)
       totalCurrentMarketPrice = totalCurrentMarketPrice + currentMarketPrice
       val tradeList: Option[Seq[Trade]] = tradesMap.get(symbol)
@@ -37,11 +48,12 @@ class PortfolioBuilder {
           totalUnits = totalUnits + trade.getUnits
           // if buy add to total buy price
           totalBuyPrice = totalBuyPrice + trade.getRate
+          totalValue = totalValue + (totalUnits * currentMarketPrice)
         } else {
           // if sell add to sell count
           totalSells = totalSells + 1
           // if buy add to quantity else subtract = total quantity
-          totalUnits = totalUnits - trade.getUnits
+          totalUnits = totalUnits + trade.getUnits //sells are stored as negative
           totalSellPrice = totalSellPrice + trade.getRate
         }
       })
@@ -55,7 +67,7 @@ class PortfolioBuilder {
         0.0F, 0.0F)
       portfolio = portfolio :+ userStockSummary
     })
-    return new UserPortfolioSummary(totalCurrentMarketPrice, portfolio)
+    return new UserPortfolioSummary(totalValue, portfolio)
   }
 
 }

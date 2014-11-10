@@ -32,7 +32,7 @@ class UserPortfolio(user: String) {
 
   val json: JsValue = JsObject(Seq(
     "user" -> JsString(user),
-    "cash_balance" -> JsNumber(new UserDBModel().springJDBCQueries.selectUserByEmail(user).getCash),
+    "cash_balance" -> JsNumber(new UserDBModel().view.selectUserByEmail(user).getCash),
     "current_value_total" -> JsNumber(portfolio.currentValue),
     "stocks" -> Json.toJson(portfolio.portfolio)
   ))

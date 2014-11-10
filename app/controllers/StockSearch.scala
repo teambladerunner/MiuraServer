@@ -1,7 +1,8 @@
 package controllers
 
 import akka.util.Timeout
-import model.stocks.StocksDBModel
+import model.SystemSupervisor
+import model.stocks.{GetQuote, StocksDBModel}
 import play.api.libs.json._
 import play.api.mvc.{Action, _}
 import play.mvc.Http.HeaderNames
@@ -9,6 +10,7 @@ import play.mvc.Http.HeaderNames
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import akka.pattern.ask
 
 object StockSearch extends Controller {
 
@@ -19,8 +21,10 @@ object StockSearch extends Controller {
       implicit val timeout: Timeout = new Timeout(duration)
 
       val stockSentiment: Future[JsValue] = StockSentiment.getForServer(symbol)
-      val current = new java.math.BigDecimal(Global.stockQuote.newPrice(symbol, 0.0).toString)
-      val nasdaqStockInfo = Option(new StocksDBModel().springJDBCQueries.getStockDailyInfo(symbol))
+      //val current = new java.math.BigDecimal(Global.stockQuote.newPrice(symbol, 0.0).toString)
+      val marketPriceFuture = SystemSupervisor.supervisor ask new GetQuote(symbol)
+      val current = new java.math.BigDecimal(Await.result(marketPriceFuture, timeout.duration).asInstanceOf[Double].toString)
+      val nasdaqStockInfo = Option(new StocksDBModel().view.getStockDailyInfo(symbol))
       val open = nasdaqStockInfo match {
         case None => new java.math.BigDecimal("0.0")
         case _ => new java.math.BigDecimal(nasdaqStockInfo.get.getLastSaleRate.toString)

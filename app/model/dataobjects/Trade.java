@@ -17,13 +17,16 @@ public class Trade {
 
     private final String user;
 
-    public Trade(Timestamp time, String user, String symbol, Float units, Float rate, String buySell) {
+    private final String pending;
+
+    public Trade(Timestamp time, String user, String symbol, Float units, Float rate, String buySell, String pending) {
         this.time = time;
         this.symbol = symbol;
         this.units = units;
         this.rate = rate;
         this.buySell = buySell;
         this.user = user;
+        this.pending = pending;
     }
 
     public String getSymbol() {
@@ -50,8 +53,12 @@ public class Trade {
         return user;
     }
 
+    public String getPending() {
+        return pending;
+    }
+
     public static final Trade buildFromJSON(String user, String json) throws Exception {
         Map<String, String> keyValues = KeyValue.buildKeyValuesAsMap(json);
-        return new Trade(new Timestamp(System.currentTimeMillis()), user, keyValues.get("symbol"), Float.parseFloat(keyValues.get("units")), Float.parseFloat(keyValues.get("rate")), keyValues.get("buy_sell"));
+        return new Trade(new Timestamp(System.currentTimeMillis()), user, keyValues.get("symbol"), Float.parseFloat(keyValues.get("units")), Float.parseFloat(keyValues.get("rate")), keyValues.get("buy_sell"), "Y");
     }
 }
